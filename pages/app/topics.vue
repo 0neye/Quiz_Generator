@@ -2,13 +2,11 @@
 import { useTopicStore } from "~~/stores/topics";
 const topicStore = useTopicStore();
 
-//const reload = ref(1);
 const topics = ref(topicStore.getTopics());
 
 function update() {
     topicStore.loadState();
     topics.value = topicStore.getTopics();
-    //reload.value++;
 }
 
 onMounted(() => {
@@ -29,7 +27,7 @@ definePageMeta({
         </Head>
 
         <div>
-            <transition-scale group tag="div" :duration="300" axis="both" class="grid grid-cols-4 gap-4">
+            <transition-scale group tag="div" :duration="300" axis="both" class="grid grid-cols-1 lg:grid-cols-4 gap-4">
                 <div v-for="topic in topics" :key="topic.id">
                     <TopicTile :topicId="topic?.id" :callback="update">
                         <template #title>

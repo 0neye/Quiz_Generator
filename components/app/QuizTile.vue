@@ -21,6 +21,7 @@
 import { useTopicStore } from "~~/stores/topics";
 const store = useTopicStore();
 
+// Delete this quiz.
 function deleteThis() {
     store.removeQuiz(props.topicId, props.quizId);
     props.callback();
@@ -29,7 +30,7 @@ function deleteThis() {
 const props = defineProps<{
     topicId: number;
     quizId: number;
-    callback: CallableFunction;
+    callback: CallableFunction; // to refresh the quiz list
 }>();
 </script>
 

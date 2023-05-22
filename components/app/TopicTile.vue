@@ -21,6 +21,7 @@
 import { useTopicStore } from "~~/stores/topics";
 const store = useTopicStore();
 
+// Delete this topic.
 function deleteThis() {
     store.removeTopic(props.topicId);
     props.callback();
@@ -28,7 +29,7 @@ function deleteThis() {
 
 const props = defineProps<{
     topicId: number;
-    callback: CallableFunction;
+    callback: CallableFunction; // to refresh the topic list
 }>();
 </script>
 

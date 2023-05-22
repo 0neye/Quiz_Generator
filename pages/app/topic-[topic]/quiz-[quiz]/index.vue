@@ -27,7 +27,7 @@ const oneTry = computed(() => store.getQuiz(+topic, +quiz)?.settings.oneTry);
 
 definePageMeta({
   layout: "quiz",
-  middleware: "actual-route-params",
+  middleware: "actual-route-params", // get around layouts not being able to access all route params
 });
 onMounted(() => {
   store.loadState();
@@ -39,15 +39,22 @@ onMounted(() => {
   }
 });
 
-//const reload = ref(1);
-
-function reRender() {
+// Updates the quiz in the store.
+function update() {
   //questions = store.getQuiz(+topic, +quiz)?.questions
   store.editQuiz(+topic, +quiz, (quiz: Quiz) => {
     quiz.questions = questions.value;
   });
-  //reload.value++;
 }
+
+/**
+ * Edits a question in a quiz. Passed to each question component.
+ * Probably just better to let each question component access the store directly.
+ *
+ * @param {Question} question - The question to be edited.
+ * @param {CallableFunction} callback - A function to be called once the question is edited.
+ * @return {void} This function does not return anything.
+ */
 function editQuestion(question: Question, callback: CallableFunction) {
   store.editQuiz(+topic, +quiz, (quiz: Quiz) => {
     const idx = quiz.questions.findIndex((q) => q.text === question.text);
@@ -57,27 +64,14 @@ function editQuestion(question: Question, callback: CallableFunction) {
 
 let quizText = "";
 
-// async function streamQuiz() {
-//     const stream = await fetch('/api/model', {
-//         method: 'POST',
-//         body: JSON.stringify({
-//             topic: `Title: ${store.getTopic(+topic)?.title}\nDescription: ${store.getTopic(+topic)?.description}`,
-//             quiz: `${store.getQuiz(+topic, +quiz)?.title}`,
-//             context: `${store.getQuiz(+topic, +quiz)?.description}`
-//         }),
-//     });
-
-//     function helper(value: string) {
-//         quizText += value
-//         console.log(quizText);
-//         questions = parseQuiz(quizText) //causes constant answer order randomization and flickering (TODO: fix)
-//         reRender()
-//     }
-
-//     parseStream(stream, helper);
-// }
+/**
+ * Asynchronously streams a quiz and updates it. Uses different api endpoints depending on whether the fast mode is on.
+ *
+ * @return {Promise<void>} Promise that resolves when the quiz is updated.
+ */
 async function streamQuiz() {
   let questionsText = "";
+  // generate a seed so all the answer options are randomized in the same order when streaming
   const thisSeed = Math.random();
   const q = store.getQuiz(+topic, +quiz);
 
@@ -99,11 +93,8 @@ async function streamQuiz() {
       questionsText += value;
       console.log(questionsText);
       questions.value = parseQuiz(questionsText);
-      // const questions = parseQuiz(questionsText)
-      // store.editQuiz(+topic, +quiz, (quiz: Quiz) => {
-      //     quiz.questions = questions
-      // })
-      reRender();
+      //update the quiz
+      update();
     }
     console.log("Streaming questions...");
     await parseStream(questionStream, questionHandler);
@@ -150,7 +141,7 @@ async function streamQuiz() {
           thisQuestion.text,
           thisQuestion.answers,
         ];
-        reRender();
+        update();
       }
       if (thoughts) {
         questions.value[index].thoughts = thoughts;
@@ -177,7 +168,7 @@ async function streamQuiz() {
       quizText += value;
       console.log(quizText);
       questions.value = parseQuiz(quizText, thisSeed);
-      reRender();
+      update();
     }
 
     parseStream(stream, helper);

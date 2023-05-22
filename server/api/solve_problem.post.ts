@@ -305,6 +305,7 @@ class Calculator implements Tool {
     ]
     async run(input: string): Promise<string> {
         try {
+            // Yes this is a vulnerability. I could probably add more checks to the failure_patterns to help.
             return eval(input).toString()
         } catch (e) {
             return `Calculator Error: Invalid Javascript expression. ${(e as Error).message.slice(0, 30)}...`
@@ -316,6 +317,7 @@ class Calculator implements Tool {
     }
 }
 
+// not really used due to api limitations
 class Wolfram implements Tool {
     name = "Wolfram"
     description = `Wolfram Alpha. Computational and statistical intelligence tool. Good at:

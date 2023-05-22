@@ -4,3 +4,7 @@ Users can create practice quizes on any topic (with varying quality)
 
 Meant to be different to the existing quiz generator websites that make you sign up/pay to use them 
 and force you to give context to generate a quiz from, which isn't always possible for students.
+
+![A landing page](https://cdn.discordapp.com/attachments/1081089348046438400/1110243334712213546/image.png "The landing page")
+
+Currently the UI doesn't really work on mobile.

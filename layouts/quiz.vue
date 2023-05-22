@@ -35,6 +35,7 @@
 
 <script setup lang="ts">
 // uses 'actual-route-params' middleware
+// gets around layouts not being able to access all route params
 const topic = useState("topicID").value as number;
 const quiz = useState("quizID").value as number;
 let store = useTopicStore();
