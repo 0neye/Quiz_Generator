@@ -7,16 +7,12 @@
       }}</span>
 
       <!-- explain button -->
-      <span
-        v-if="props.question.doneStreaming"
-        class="btn m-2 ml-auto flex"
-        @click="
-          {
-            explain();
-            showExplanation = showExplanation ? false : true;
-          }
-        "
-      >
+      <span v-if="props.question.doneStreaming" class="btn m-2 ml-auto flex" @click="
+                      {
+        explain();
+        showExplanation = showExplanation ? false : true;
+      }
+        ">
         <span class="material-symbols-outlined mr-1"> segment </span>
         <span>Explain</span>
       </span>
@@ -27,18 +23,9 @@
     </div>
 
     <!-- answer options -->
-    <div
-      v-for="(answer, index) in question.answers"
-      :key="answer.letter"
-      class="flex flex-col my-1"
-    >
-      <div
-        :class="`flex max-w-full card-clickable ${answerColors[index]}`"
-        :id="index.toString()"
-        @click="answerClicked"
-      >
-        <span class="my-1 mr-2 text-xl" :id="index.toString()"
-          >{{ answer.letter }}.
+    <div v-for="(answer, index) in question.answers" :key="answer.letter" class="flex flex-col my-1">
+      <div :class="`flex max-w-full card-clickable ${answerColors[index]}`" :id="index.toString()" @click="answerClicked">
+        <span class="my-1 mr-2 text-xl" :id="index.toString()">{{ answer.letter }}.
         </span>
         <span class="my-1 text-lg" :id="index.toString()"> {{ answer.text }}</span>
       </div>
@@ -48,22 +35,16 @@
     <div v-if="question.answers.length == 0" class="my-1">
       <v-progress-linear indeterminate></v-progress-linear>
     </div>
-    <div
-      v-if="explanation.length > 0 && showExplanation"
-      class="p-2 mt-2 border-2 border-green-500 rounded-lg"
-    >
+    <div v-if="explanation.length > 0 && showExplanation" class="p-2 mt-2 border-2 border-green-500 rounded-lg">
       <div class="px-1 text-xl">Explanation:</div>
       <div class="px-1 pt-2">{{ explanation }}</div>
     </div>
-    <div
-      v-else-if="explanation.length > 0"
-      class="p-2 mt-2 border-2 border-green-500 rounded-lg w-min hover:cursor-pointer"
-      @click="
-        {
-          showExplanation = showExplanation ? false : true;
-        }
-      "
-    >
+    <div v-else-if="explanation.length > 0"
+      class="p-2 mt-2 border-2 border-green-500 rounded-lg w-min hover:cursor-pointer" @click="
+                    {
+        showExplanation = showExplanation ? false : true;
+      }
+        ">
       Explanation...
     </div>
   </div>
@@ -81,6 +62,15 @@ onMounted(() => {
 
 const guessed = ref(false);
 const answerColors = ref([] as string[]);
+
+/**
+ * Handle the click event triggered when an answer is clicked. If the quiz is set to only allow one try,
+ * then the function will turn the correct answer green and the clicked answer either red or green. If the question
+ * is not set to only allow one try, then the function will only turn the clicked answer either red or green.
+ *
+ * @param {MouseEvent} event - The click event triggered when an answer is clicked.
+ * @return {void} This function does not return any value.
+ */
 function answerClicked(event: MouseEvent) {
   if (props.oneTry && guessed.value) {
     // do nothing
@@ -103,6 +93,12 @@ function answerClicked(event: MouseEvent) {
 const explanation = ref("");
 const showExplanation = ref(false);
 
+/**
+ * Asynchronously fetches an explanation for a question and sets it on the current question.
+ * If the question has not finished streaming or already has an explanation, this function does nothing.
+ *
+ * @return {void} Nothing is returned.
+ */
 async function explain() {
   if (!props.question.doneStreaming || explanation.value.length > 0) {
     return;

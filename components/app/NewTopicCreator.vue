@@ -21,6 +21,11 @@ const topicStore = useTopicStore();
 const title = ref("");
 const description = ref("");
 
+/**
+ * Adds a new topic with a given title and description to the topic store and calls the callback function.
+ *
+ * @return {void} This function does not return anything.
+ */
 const addTopic = () => {
     if (title.value) {
         if (!description.value) {

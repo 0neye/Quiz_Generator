@@ -4,12 +4,11 @@ import { useTopicStore } from "~~/stores/topics";
 const store = useTopicStore();
 const { topic } = useRoute().params;
 const quizzes = ref(store.getQuizzes(+topic));
-//const reload = ref(1);
+
 
 function update() {
     store.loadState();
     quizzes.value = store.getQuizzes(+topic);
-    //reload.value++;
 }
 
 onMounted(() => {
@@ -30,7 +29,7 @@ definePageMeta({
         </Head>
 
         <div>
-            <transition-scale group tag="div" :duration="300" axis="both" class="grid grid-cols-4 gap-4">
+            <transition-scale group tag="div" :duration="300" axis="both" class="grid grid-cols-1 lg:grid-cols-4 gap-4">
                 <div v-for="quiz in quizzes" :key="quiz?.id">
                     <QuizTile :topicId="+topic" :quizId="+quiz?.id" :callback="update">
                         <template #title>
