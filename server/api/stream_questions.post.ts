@@ -41,7 +41,7 @@ Don't inlude answer options. Only follow the syntax above. Every question you ge
     );
     console.log("streaming...")
     return sendStream(event, stream);
-
+})
 
 
     // let answer = ""
@@ -101,4 +101,3 @@ Don't inlude answer options. Only follow the syntax above. Every question you ge
     //         }
     //     }
     // }
-})
