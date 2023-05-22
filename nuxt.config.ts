@@ -6,6 +6,9 @@ export default defineNuxtConfig({
         transpile: ['vuetify', 'gsap'],
 
     },
+    nitro: {
+        preset: "vercel",
+    },
     imports: {
         dirs: ['./stores'],
     },
