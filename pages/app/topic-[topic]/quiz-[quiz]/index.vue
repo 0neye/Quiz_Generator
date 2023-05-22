@@ -5,6 +5,7 @@
       <Title>Quiz | {{ store.getQuiz(+topic, +quiz)?.title }}</Title>
       <Meta name="description" :content="store.getQuiz(+topic, +quiz)?.description" />
     </Head>
+
     <nav></nav>
     <div class="flex flex-col gap-10">
       <div class="quiz" v-for="question in questions" :key="question.text">
