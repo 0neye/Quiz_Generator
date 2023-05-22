@@ -164,7 +164,7 @@ The last part of your response MUST be your final answer in that format.`
  * An asynchronous function that takes in a question, context, expertType, an array of tools, an openai object, and a verbose flag 
  * and returns a Promise that resolves to an object containing the answer and thoughts. 
  * The function first creates a system prompt and a user prompt, then enters a main loop where it parses the output and either gets the answer, requests a tool, or gets an error. 
- * If the output is a request for a tool, the tool is run and the result is returned to the user, otherwise, the answer is returned along with the thoughts. 
+ * If the output is a request for a tool, the tool is run and the result is sent to the model through a user message, otherwise, the answer is returned along with the thoughts. 
  * If the function reaches the end of the loop without finding an answer, it will fallback to using the simpleQA function. 
  *
  * @async
