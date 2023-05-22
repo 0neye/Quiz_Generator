@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    @apply bg-gray-50 text-black dark:bg-gray-950 dark:text-gray-50;
+}
+
+
+.card {
+    /* general */
+    @apply p-3 rounded-lg shadow-md container h-max bg-gradient-to-b;
+    /* light */
+    @apply bg-gray-100 border-gray-200 from-gray-100 to-slate-100;
+    /* dark */
+    @apply dark:bg-slate-800 dark:border-gray-700 dark:from-gray-800 dark:to-slate-800;
+    border-top-width: 1px;
+
+}
+
+.card-clickable {
+    /* general */
+    @apply cursor-pointer rounded-lg shadow-md container h-max p-3 hover:cursor-pointer bg-gradient-to-b;
+    /* light */
+    @apply bg-gray-100 from-gray-100 to-slate-100 border-t-gray-200;
+    /* dark */
+    @apply  dark:bg-slate-800 dark:hover:bg-slate-800 dark:from-gray-800 dark:to-slate-800 dark:border-t-gray-700;
+
+    border: 1px solid transparent;
+}
+.card-clickable:hover{
+    border: 1px solid #37d4ff
+}
+
+.input {
+    /* general */
+    @apply p-1 w-full h-fit font-semibold rounded-md border-2 focus:outline-none;
+    /* light */
+    @apply bg-gray-200 border-gray-300  focus:border-gray-700;
+    /* dark */
+    @apply dark:bg-slate-800 dark:border-gray-500 dark:focus:border-gray-400;
+}
+
+.btn {  
+    /* general */
+    @apply px-4 py-2 font-semibold rounded-full border-2 hover:cursor-pointer hover:border-accent dark:hover:border-accent;
+    /* light */
+    @apply bg-gray-100 hover:bg-slate-100 text-black;
+    /* dark */
+    @apply dark:bg-slate-800  dark:hover:bg-slate-800 dark:border-gray-600 dark:text-white;
+}
+
+
+.btn-small {
+    /* general */
+    @apply px-1 py-1 font-semibold rounded-full border-2 hover:cursor-pointer;
+    /* light */
+    @apply bg-gray-200 hover:bg-slate-100;
+    /* dark */
+    @apply dark:bg-slate-800  dark:hover:bg-slate-700 dark:border-gray-600;
+}
+
+.pos-rel {
+    position: relative;
+}
+
+.pos-abs {
+    position: absolute;
+}
+
+#canvas {
+    display: block;
+    z-index: -1;
+}
+
+/* * {
+    outline: 1px solid red;
+} */
