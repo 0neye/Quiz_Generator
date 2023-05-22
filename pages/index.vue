@@ -1,8 +1,6 @@
 <template>
   <canvas class="h-max w-max fixed top-0" id="canvas" />
-  <div
-    class="min-h-screen bg-gradient-to-b from-transparent to-blue-200 dark:from-gray-950 dark:to-blue-900 pos-rel"
-  >
+  <div class="min-h-screen bg-gradient-to-b from-transparent to-blue-200 dark:from-gray-950 dark:to-blue-900 pos-rel">
     <section>
       <main class="flex flex-col px-8 py-16 lg:mx-24">
         <h1 class="text-5xl lg:text-8xl font-bold max-w-fit slogan h-44 lg:h-72 mt-14">
@@ -10,16 +8,11 @@
         </h1>
 
         <p class="text-2xl lg:text-3xl mt-4 max-w-xl mx-auto text-center">
-          With anyquiz you can generate quizzes on any topic in seconds. Just describe
+          With Anyquiz you can generate quizzes on any topic in seconds. Just describe
           what you want to study and click create.
         </p>
 
-        <NuxtLink
-          to="/start"
-          class="btn mt-8 text-xl mx-auto start-btn"
-          @mouseenter="grow"
-          @mouseleave="shrink"
-        >
+        <NuxtLink to="/start" class="btn mt-8 text-xl mx-auto start-btn" @mouseenter="grow" @mouseleave="shrink">
           Get Started
         </NuxtLink>
       </main>
@@ -28,77 +21,52 @@
     </section>
     <section>
       <section class="py-40 my-20">
-        <ImageTextCard
-          :flip="false"
-          :image="`../assets/images/fast.png`"
-          class="mx-auto item"
-        >
+        <ImageTextCard :flip="false" :image="`../assets/images/fast.png`" class="mx-auto item">
           <template #title>Fast</template>
-          <template #text
-            >anyquiz uses state-of-the-art natural language processing to generate quizzes
-            in seconds. No need to spend hours crafting questions and answers.
+          <template #text>Anyquiz uses state-of-the-art natural language processing to generate quizzes
+            in seconds. Your professor didn't provide practice questions? No problem!
           </template>
         </ImageTextCard>
       </section>
 
       <section class="diagonal py-40 my-20">
-        <ImageTextCard
-          :flip="true"
-          :image="`../assets/images/accurate.png`"
-          class="mt-10 mx-auto item"
-        >
+        <ImageTextCard :flip="true" :image="`../assets/images/accurate.png`" class="mt-10 mx-auto item">
           <template #title>Accurate</template>
-          <template #text
-            >anyquiz ensures that the quizzes are relevant, factual, and diverse. You can
-            also customize the difficulty level, number of questions, and answer format.
+          <template #text>Anyquiz does its best to make sure quizes are as accurate and factual as
+            possible given the limitations. Anyquiz uses a custom LLM agent architecture
+            to solve problems, and you can provide your own context to improve results.
           </template>
         </ImageTextCard>
       </section>
 
       <section class="py-40 my-20">
-        <ImageTextCard
-          :flip="false"
-          :image="`../assets/images/private.png`"
-          class="mt-10 mx-auto item"
-        >
+        <ImageTextCard :flip="false" :image="`../assets/images/private.png`" class="mt-10 mx-auto item">
           <template #title>Private</template>
-          <template #text
-            >anyquiz respects your privacy and does not store or share your data. You can
-            create quizzes anonymously or sign up for a free account to save and manage
-            your quizzes.
+          <template #text>Anyquiz respects your privacy and does not store or share your data. You can
+            create quizzes anonymously by simply pasting in your OpenAI API key which is
+            then stored in your browser.
           </template>
         </ImageTextCard>
       </section>
 
       <section class="diagonal2 py-40 my-20">
-        <ImageTextCard
-          :flip="true"
-          :image="`../assets/images/cheap.png`"
-          class="mt-10 mx-auto item"
-        >
+        <ImageTextCard :flip="true" :image="`../assets/images/cheap.png`" class="mt-10 mx-auto item">
           <template #title>Cheap</template>
-          <template #text
-            >anyquiz is free to use for up to 10 quizzes per month. If you need more, you
-            can upgrade to a premium plan for a low monthly fee.
+          <template #text>You only have to pay for the calls to the OpenAI API, which usually includes
+            $18 of free credits. The problem solving architecture has been optimized to
+            reduce the number of API calls, and therefore costs.
           </template>
         </ImageTextCard>
       </section>
 
       <!-- add a call to action at the end of the section -->
       <div class="mt-8 flex items-center justify-center">
-        <NuxtLink
-          to="/start"
-          class="btn mt-8 text-xl mx-auto start-btn"
-          @mouseenter="grow"
-          @mouseleave="shrink"
-          >Get Started</NuxtLink
-        >
+        <NuxtLink to="/start" class="btn mt-8 text-xl mx-auto start-btn" @mouseenter="grow" @mouseleave="shrink">Get
+          Started</NuxtLink>
       </div>
     </section>
 
-    <footer
-      class="bg-gray-100 dark:bg-gray-900 py-8 px-8 flex items-center justify-center mt-14"
-    >
+    <footer class="bg-gray-100 dark:bg-gray-900 py-8 px-8 flex items-center justify-center mt-14">
       <p>&copy; 2023 anyquiz. All rights reserved.</p>
     </footer>
   </div>
