@@ -1,9 +1,11 @@
 import gsap from "gsap";
 /**
-Generates a text generation effect by shuffling through a given string's characters
-and replacing them at a given interval to create the illusion of text being typed out.
-@param ref - A reference to the string value to be modified.
-@param lettersPerSecond - The number of letters to be shuffled through per second. */
+ * Generates a text generation effect by shuffling through a given string's characters
+ * and replacing them at a given interval to create the illusion of text being typed out.
+ *
+ * @param ref - A reference to the string value to be modified.
+ * @param lettersPerSecond - The number of letters to be shuffled through per second. 
+ */
 export function textGenerationEffect(ref: Ref<string>, lettersPerSecond: number) {
     // Get the original string value
     const original = ref.value;
@@ -36,7 +38,8 @@ export function textGenerationEffect(ref: Ref<string>, lettersPerSecond: number)
 }
 
 /**
- * Animates the scaling of an element in response to a mouse event.
+ * Animates a growing effect on the target element of a mouse event using GSAP library.
+ * 
  * @param event - The mouse event that triggered the function.
  */
 export function grow(event: MouseEvent) {
@@ -94,10 +97,34 @@ export function animateCanvas() {
     ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
 
+    // scroll effect adds upward/downward velocity in the opposite direction
+    // implemented in the updateParticlea and createParticle functions, and main loop
+    let scrolled = 0; // used below
+    let scrollSpeed = 0;
+
+
+    let lastScrollTop = 0;
+    window.addEventListener('scroll', function () {
+        let currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+        if (currentScrollTop > lastScrollTop) {
+            scrolled = -1;
+            console.log(scrolled);
+        } else {
+            scrolled = 1;
+            console.log(scrolled);
+        }
+        scrollSpeed = PARTICLE_SPEED * scrolled * 0.5; //kinda magic
+
+        lastScrollTop = currentScrollTop;
+    });
+
+
     // Define some "constants"
     let MAX_PARTICLES = 50; // The maximum number of particles
     const PARTICLE_SIZE = 3; // The size of each particle
     const PARTICLE_SPEED = 0.7; // The speed of each particle
+    const SCROLL_EFFECT_MAX_SPEED = PARTICLE_SPEED * 3; // The maximum speed of the particles after the scroll effect
     const LINE_DISTANCE = 350; // The maximum distance between two particles to draw a line
     const LINE_WIDTH = 0.5; // The width of the line
     const LINE_COLOR = [100, 120, 150]; // The base color of the line
@@ -109,7 +136,7 @@ export function animateCanvas() {
         const x = Math.random() * canvas.width;
         const y = Math.random() * canvas.height;
         const vx = Math.random() * PARTICLE_SPEED * 2 - PARTICLE_SPEED;
-        const vy = Math.random() * PARTICLE_SPEED * 2 - PARTICLE_SPEED;
+        const vy = Math.random() * (PARTICLE_SPEED * 2 - PARTICLE_SPEED) + scrollSpeed; // so new particles maintain the scroll effect
         const alpha = Math.random();
 
         // Return a new particle with gray color
@@ -121,6 +148,17 @@ export function animateCanvas() {
         // Update the position by adding the velocity
         p.x += p.vx;
         p.y += p.vy;
+
+        // Dampening the velocity if it's out of bounds of PARTICLE_SPEED
+        if (p.vx > PARTICLE_SPEED) p.vx -= PARTICLE_SPEED * 0.1;
+        if (p.vx < -PARTICLE_SPEED) p.vx -= -PARTICLE_SPEED * 0.1;
+        if (p.vy > PARTICLE_SPEED) p.vy -= PARTICLE_SPEED * 0.1;
+        if (p.vy < -PARTICLE_SPEED) p.vy -= -PARTICLE_SPEED * 0.1;
+        // Clamp it if it's over the max speed
+        if (p.vx > SCROLL_EFFECT_MAX_SPEED) p.vx = SCROLL_EFFECT_MAX_SPEED;
+        if (p.vx < -SCROLL_EFFECT_MAX_SPEED) p.vx = -SCROLL_EFFECT_MAX_SPEED;
+        if (p.vy > SCROLL_EFFECT_MAX_SPEED) p.vy = SCROLL_EFFECT_MAX_SPEED;
+        if (p.vy < -SCROLL_EFFECT_MAX_SPEED) p.vy = -SCROLL_EFFECT_MAX_SPEED;
 
         // Update the alpha
         if (p.alpha > 1) {
@@ -200,6 +238,11 @@ export function animateCanvas() {
             // Get the current particle
             const p = particles[i];
 
+            // If scrolled is greater than zero, move the particle
+            if (scrolled != 0) {
+                p.vy += scrollSpeed;
+            }
+
             // Update its position, velocity, and alpha
             updateParticle(p);
 
@@ -212,6 +255,7 @@ export function animateCanvas() {
                 i--;
             }
         }
+        scrolled = 0;
 
         // Create a new particle and add it to the array
         if (particles.length < MAX_PARTICLES) {

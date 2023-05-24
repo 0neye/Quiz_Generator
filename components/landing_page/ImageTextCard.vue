@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-// TODO: Switch to just using DaisyUI https://daisyui.com/docs/install/ for this
+// TODO: Switch to just using a DaisyUI https://daisyui.com/docs/install/ hero for this
 import gsap from "gsap";
 const props = defineProps<{
     image: string;

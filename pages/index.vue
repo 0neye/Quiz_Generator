@@ -1,6 +1,7 @@
 <template>
   <canvas class="h-max w-max fixed top-0" id="canvas" />
-  <div class="min-h-screen bg-gradient-to-b from-transparent to-blue-200 dark:from-gray-950 dark:to-blue-900 pos-rel">
+  <div class="min-h-screen bg-gradient-to-b from-transparent to-blue-200 dark:from-gray-950 dark:to-blue-900 pos-rel"
+    id="page">
     <section>
       <main class="flex flex-col px-8 py-16 lg:mx-24">
         <h1 class="text-5xl lg:text-8xl font-bold max-w-fit slogan h-44 lg:h-72 mt-14">
@@ -84,6 +85,8 @@ onMounted(() => {
     x: -150,
     duration: 1,
   });
+  // seems to no longer work...
+  // might not do this effect anyway
   const items = document.getElementsByClassName("item");
   for (const item of items) {
     gsap.from(item, {
