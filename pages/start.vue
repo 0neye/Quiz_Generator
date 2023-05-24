@@ -1,6 +1,6 @@
 <template>
-    <main class="mx-24 text-xl text-center py-8 mt-8">
-        <h3 class="text-5xl p-5 h-20 border-b-2 w-fit mx-auto mb-5">{{ title }}</h3>
+    <main class="text-xl text-center py-8 mt-8">
+        <h3 class="text-5xl h-20 border-b-2 w-fit mx-auto mb-5">{{ title }}</h3>
         <p class="text-lg">All you need is a free OpenAI account.</p>
     </main>
     <section class="flex flex-col mt-10 mx-10 gap-8">

@@ -4,7 +4,6 @@ export default defineNuxtConfig({
     css: ['vuetify/lib/styles/main.sass'],
     build: {
         transpile: ['vuetify', 'gsap'],
-
     },
     imports: {
         dirs: ['./stores'],
@@ -31,6 +30,7 @@ export default defineNuxtConfig({
         openaiApiKey: process.env.OPENAI_API_KEY,
         wolframID: process.env.WOLFRAM_ID
     },
+    runtime: "edge",
     colorMode: {
         preference: 'system', // default value of $colorMode.preference
         fallback: 'light', // fallback value if not system preference found
