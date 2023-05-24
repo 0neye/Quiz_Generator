@@ -1,6 +1,4 @@
-//import { OpenAI } from "openai-streams/node";
-
-import { Configuration, OpenAIApi } from "openai"
+import { OpenAI } from "openai-streams/node";
 
 
 export default defineEventHandler(async (event) => {
@@ -29,30 +27,18 @@ Don't inlude answer options. Only follow the syntax above. Every question you ge
 
     const userPrompt = `<{Topic}>${topic}<{/Topic}>\n\n<{Quiz}>${title}<{/Quiz}>\n\n<{Context}>${context}\n ${qNumber} questions<{/Context}>\nReminder: Don't talk to me! I just want the questions.`
 
-    const configuration = new Configuration({
-        apiKey: OPENAI_API_KEY
-    });
-    const openai = new OpenAIApi(configuration);
-    const stream = await openai.createChatCompletion({
-        model: "gpt-3.5-turbo",
-        temperature: 0.5,
-        messages: [
-            { "role": "system", "content": systemPrompt },
-            { "role": "user", "content": userPrompt }
-        ],
-    })
-    // const stream = await OpenAI(
-    //     "chat",
-    //     {
-    //         model: "gpt-3.5-turbo",
-    //         messages: [
-    //             { "role": "system", "content": systemPrompt },
-    //             { "role": "user", "content": userPrompt }
-    //         ],
-    //         stream: true
-    //     },
-    //     { apiKey: OPENAI_API_KEY }
-    // );
+    const stream = await OpenAI(
+        "chat",
+        {
+            model: "gpt-3.5-turbo",
+            messages: [
+                { "role": "system", "content": systemPrompt },
+                { "role": "user", "content": userPrompt }
+            ],
+            stream: true
+        },
+        { apiKey: OPENAI_API_KEY }
+    );
     console.log("streaming...")
     return sendStream(event, stream);
 })

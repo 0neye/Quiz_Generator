@@ -78,28 +78,43 @@ async function streamQuiz() {
 
   if (!q.settings.fast) {
     //fetch question text
-    const questionStream = await fetch("/api/stream_questions", {
+    // const questionStream = await fetch("/api/stream_questions", {
+    //   method: "POST",
+    //   body: JSON.stringify({
+    //     topic: `Title: ${store.getTopic(+topic)?.title}\nDescription: ${store.getTopic(+topic)?.description
+    //       }`,
+    //     title: `${q?.title}`,
+    //     context: `${q?.description}`,
+    //     qNumber: `${q?.settings.questionNumber}`,
+    //     qTypes: q?.settings.questionTypes?.join(", "),
+    //   }),
+    // });
+    // function questionHandler(value: string) {
+    //   //runs for every new token in the stream
+    //   questionsText += value;
+    //   console.log(questionsText);
+    //   questions.value = parseQuiz(questionsText);
+    //   //update the quiz
+    //   update();
+    // }
+    // console.log("Streaming questions...");
+    // await parseStream(questionStream, questionHandler);
+    // console.log("Finished streaming questions...");
+    let response = await useFetch("/api/get_questions", {
       method: "POST",
-      body: JSON.stringify({
+      body: {
         topic: `Title: ${store.getTopic(+topic)?.title}\nDescription: ${store.getTopic(+topic)?.description
           }`,
         title: `${q?.title}`,
         context: `${q?.description}`,
         qNumber: `${q?.settings.questionNumber}`,
         qTypes: q?.settings.questionTypes?.join(", "),
-      }),
+      },
     });
-    function questionHandler(value: string) {
-      //runs for every new token in the stream
-      questionsText += value;
-      console.log(questionsText);
-      questions.value = parseQuiz(questionsText);
-      //update the quiz
-      update();
-    }
-    console.log("Streaming questions...");
-    await parseStream(questionStream, questionHandler);
-    console.log("Finished streaming questions...");
+    questionsText += response.data.value?.response;
+    console.log(response.data.value);
+    questions.value = parseQuiz(questionsText);
+    update();
 
     //go through questions
     for (let index = 0; index < questions.value.length; index++) {
