@@ -30,7 +30,6 @@ export default defineNuxtConfig({
         openaiApiKey: process.env.OPENAI_API_KEY,
         wolframID: process.env.WOLFRAM_ID
     },
-    runtime: "edge",
     colorMode: {
         preference: 'system', // default value of $colorMode.preference
         fallback: 'light', // fallback value if not system preference found
