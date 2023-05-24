@@ -5,8 +5,8 @@
         <NuxtLink :to="`/app/topic-${props.topicId}`">
             <div class="card-clickable">
                 <div class="font-semibold text-xl">
-                    <h3>
-                        <slot name="title" class="truncate"></slot>
+                    <h3 class="truncate mr-8">
+                        <slot name="title"></slot>
                     </h3>
                 </div>
                 <p class="description">

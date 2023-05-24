@@ -27,7 +27,8 @@ definePageMeta({
         </Head>
 
         <div>
-            <transition-scale group tag="div" :duration="300" axis="both" class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <transition-scale group tag="div" :duration="300" axis="both"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 <div v-for="topic in topics" :key="topic.id">
                     <TopicTile :topicId="topic?.id" :callback="update">
                         <template #title>
