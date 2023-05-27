@@ -18,6 +18,10 @@
     "vue": "latest"
   },
   "dependencies": {
+    "vue": "^3.3.2",
+    "@nuxtjs/color-mode": "^3.2.0",
+    "@nuxtjs/tailwindcss": "^6.6.5",
+    "nuxt": "^3.3.2",
     "@morev/vue-transitions": "^2.3.6",
     "@pinia/nuxt": "^0.4.7",
     "gsap": "^3.11.5",
