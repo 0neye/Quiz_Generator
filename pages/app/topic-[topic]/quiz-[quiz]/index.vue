@@ -144,12 +144,13 @@ async function streamQuiz() {
         ];
         update();
       }
-      if (thoughts) {
-        questions.value[index].thoughts = thoughts;
-      }
       await parseStream(answerStream, answerHandler);
       questions.value[index].doneStreaming = true;
       console.log(`Finished streaming answers for question ${index + 1}`);
+      if (thoughts) {
+        questions.value[index].thoughts = thoughts;
+        console.log("Saved thoughts");
+      }
     } //);
     quizText += questionsText;
     console.log(quizText);
