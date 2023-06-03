@@ -1,10 +1,29 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-    modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', '@nuxtjs/color-mode', '@morev/vue-transitions/nuxt'],
-    css: ['vuetify/lib/styles/main.sass'],
-    build: {
-        transpile: ['vuetify', 'gsap'],
+    modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', '@nuxtjs/color-mode', '@morev/vue-transitions/nuxt', '@invictus.codes/nuxt-vuetify'],
+    vuetify: {
+        /* vuetify options */
+        vuetifyOptions: {
+            // @TODO: list all vuetify options
+        },
+        moduleOptions: {
+            /* nuxt-vuetify module options */
+            treeshaking: true,
+            useIconCDN: true,
+            /* vite-plugin-vuetify options */
+            styles: true,
+            autoImport: true,
+        }
     },
+    //css: ['vuetify/lib/styles/main.sass'],
+    // build: {
+    //     transpile: ['vuetify', 'gsap'],
+    // },
+    // vite: {
+    //     ssr: {
+    //         noExternal: ['vuetify'],
+    //     }
+    // },
     imports: {
         dirs: ['./stores'],
     },

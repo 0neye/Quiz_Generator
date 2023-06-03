@@ -7,7 +7,7 @@
     <div class="fixed top-0 w-full z-10">
       <nav class="flex items-center justify-between px-8 py-4 dark:bg-gray-950">
         <NuxtLink class="flex items-center space-x-2" to="/">
-          <img src="../assets/images/logo.png" alt="Logo" class="h-8 w-8" />
+          <img src="/images/logo.png" alt="Logo" class="h-8 w-8" />
           <span class="text-2xl font-bold">anyquiz</span>
         </NuxtLink>
         <div class="flex gap-3">
