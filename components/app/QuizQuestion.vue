@@ -7,8 +7,8 @@
       }}</span>
 
       <!-- explain button -->
-      <span v-if="props.question.doneStreaming" class="btn m-2 ml-auto flex" @click="
-                      {
+      <span v-if="props.question.doneStreaming" class="btn mx-2 ml-auto flex mb-auto" @click="
+                {
         explain();
         showExplanation = showExplanation ? false : true;
       }
@@ -16,7 +16,7 @@
         <span class="material-symbols-outlined mr-1"> segment </span>
         <span>Explain</span>
       </span>
-      <span v-else class="btn m-2 ml-auto flex hover:cursor-default border-none">
+      <span v-else class="btn mx-2 ml-auto flex hover:cursor-default border-none mb-auto">
         <span class="material-symbols-outlined mr-1"> segment </span>
         <span>Explain</span>
       </span>
@@ -41,7 +41,7 @@
     </div>
     <div v-else-if="explanation.length > 0"
       class="p-2 mt-2 border-2 border-green-500 rounded-lg w-min hover:cursor-pointer" @click="
-                    {
+              {
         showExplanation = showExplanation ? false : true;
       }
         ">

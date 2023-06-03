@@ -13,12 +13,12 @@
         <div class="flex gap-3">
           <div class="btn flex" @click="copyQuiz">
             <span class="material-symbols-outlined mr-1">content_copy</span>
-            <span>Copy Quiz</span>
+            <span class="my-div hidden md:inline">Copy Quiz</span>
           </div>
           <div class="flex">
             <NuxtLink :to="`/app/topic-${topic}`" class="flex btn">
               <span class="material-symbols-outlined mr-1">quiz</span>
-              <span>Quizzes</span>
+              <span class="my-div hidden md:inline">Quizzes</span>
             </NuxtLink>
           </div>
         </div>
