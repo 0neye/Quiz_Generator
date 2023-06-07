@@ -9,6 +9,16 @@ and force you to give context to generate a quiz from, which isn't always possib
 
 Currently the UI doesn't really work on mobile.
 
-Deploying on Vercel edge functions results in an error I can't find any help for online or the Nuxt Discord.
+## Deployment issues (unresolved)
+Attempt 1:
+
+Deploying on Vercel edge functions resulted in an error I couldn't find any help for online.
 All documentation points to just giving it the "vercel-edge" preset and it working.
-Using serverless functions results in a timeout, so the version deployed on vercel can't actually generate any quizzes until this bug is fixed.
+Using serverless functions results in a timeout, so the version deployed on Vercel can't actually generate any quizzes until this bug is fixed.
+Finally someone on the Nuxt Discord server said streaming just isn't very compatible with edge.
+
+Attempt 2:
+
+I find Render which looks to have a similarly generous free tier to Vercel but can run basic node instances.
+Building succeeds, but when trying to run it I get another error related to Vuetify which no solutions found anywhere fix.
+This is currently where deployment stands. If I can't fix this bug I'll probably have to ditch Vuetify which would be a lot of work.
