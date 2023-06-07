@@ -1,5 +1,5 @@
 <template>
-    <div v-if="flip" class="max-w-4xl h-full flex-shrink-0 flex items-start space-x-4 item">
+    <div v-if="flip" class="max-w-full h-full flex-shrink-0 sm:flex-col flex items-start space-x-4">
         <img :src="imageUrl" class="image-card h-40 w-fit object-cover" />
         <div class="flex flex-col">
             <h3 class="text-3xl font-bold">
@@ -10,7 +10,7 @@
             </p>
         </div>
     </div>
-    <div v-else class="max-w-4xl h-full flex-shrink-0 flex items-start space-x-4 item">
+    <div v-else class="max-w-full h-full flex-shrink-0 sm:flex-col-reverse flex items-start space-x-4">
         <div class="flex flex-col">
             <h3 class="text-3xl font-bold">
                 <slot name="title"></slot>

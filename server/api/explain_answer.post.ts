@@ -3,6 +3,7 @@ import { OpenAI } from "openai-streams/node"
 
 export default defineEventHandler(async (event) => {
     const { question, thoughts } = await readBody(event)
+    console.log("In explain_answers: ", question + "\n", thoughts)
     const { openaiApiKey: OPENAI_API_KEY } = useRuntimeConfig()
     const systemPrompt = `Facts:
 - The user message will contain a question (with the correct answer marked) and a log from a conversation where an agent solved the question. 

@@ -1,10 +1,9 @@
 <template>
-  <canvas class="h-max w-max fixed top-0" id="canvas" />
-  <div class="min-h-screen bg-gradient-to-b from-transparent to-blue-200 dark:from-gray-950 dark:to-blue-900 pos-rel"
-    id="page">
+  <div class="min-h-screen bg-gradient-to-b from-transparent to-blue-200 dark:from-gray-950 dark:to-blue-900 pos-rel">
+    <canvas class="h-max w-max fixed top-0" id="canvas" />
     <section>
       <main class="flex flex-col px-8 py-16 lg:mx-24">
-        <h1 class="text-5xl lg:text-8xl font-bold max-w-fit slogan h-44 lg:h-72 mt-14">
+        <h1 class="text-4xl md:text-5xl lg:text-8xl font-bold max-w-fit slogan h-32 lg:h-72 mt-14">
           {{ slogan }}
         </h1>
 
@@ -22,7 +21,7 @@
     </section>
     <section>
       <section class="py-40 my-20">
-        <ImageTextCard :flip="false" :image="`../assets/images/fast.png`" class="mx-auto item">
+        <ImageTextCard :flip="false" :image="`../assets/images/fast.png`" class="mx-auto page-item">
           <template #title>Fast</template>
           <template #text>Anyquiz uses state-of-the-art natural language processing to generate quizzes
             in seconds. Your professor didn't provide practice questions? No problem!
@@ -31,7 +30,7 @@
       </section>
 
       <section class="diagonal py-40 my-20">
-        <ImageTextCard :flip="true" :image="`../assets/images/accurate.png`" class="mt-10 mx-auto item">
+        <ImageTextCard :flip="true" :image="`../assets/images/accurate.png`" class="mt-10 mx-auto page-item">
           <template #title>Accurate</template>
           <template #text>Anyquiz does its best to make sure quizes are as accurate and factual as
             possible given the limitations. Anyquiz uses a custom LLM agent architecture
@@ -41,7 +40,7 @@
       </section>
 
       <section class="py-40 my-20">
-        <ImageTextCard :flip="false" :image="`../assets/images/private.png`" class="mt-10 mx-auto item">
+        <ImageTextCard :flip="false" :image="`../assets/images/private.png`" class="mt-10 mx-auto page-item">
           <template #title>Private</template>
           <template #text>Anyquiz respects your privacy and does not store or share your data. You can
             create quizzes anonymously by simply pasting in your OpenAI API key which is
@@ -51,7 +50,7 @@
       </section>
 
       <section class="diagonal2 py-40 my-20">
-        <ImageTextCard :flip="true" :image="`../assets/images/cheap.png`" class="mt-10 mx-auto item">
+        <ImageTextCard :flip="true" :image="`../assets/images/cheap.png`" class="mt-10 mx-auto page-item">
           <template #title>Cheap</template>
           <template #text>You only have to pay for the calls to the OpenAI API, which usually includes
             $18 of free credits. The problem solving architecture has been optimized to
@@ -87,18 +86,18 @@ onMounted(() => {
   });
   // seems to no longer work...
   // might not do this effect anyway
-  const items = document.getElementsByClassName("item");
-  for (const item of items) {
-    gsap.from(item, {
-      x: -150,
-      duration: 1,
-      scrollTrigger: {
-        trigger: item,
-        start: "20% bottom",
-        toggleActions: "restart none none none",
-      },
-    });
-  }
+  // const items = document.getElementsByClassName("page-item");
+  // for (const item of items) {
+  //   gsap.from(item, {
+  //     x: -150,
+  //     duration: 1,
+  //     scrollTrigger: {
+  //       trigger: item,
+  //       start: "20% bottom",
+  //       toggleActions: "restart none none none",
+  //     },
+  //   });
+  // }
 });
 definePageMeta({
   colorMode: "light",

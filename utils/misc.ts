@@ -238,7 +238,8 @@ export function animateCanvas() {
             // Get the current particle
             const p = particles[i];
 
-            // For the scroll effect
+            // For scrolling effect
+
             if (scrolled != 0) {
                 p.vy += scrollSpeed;
             }

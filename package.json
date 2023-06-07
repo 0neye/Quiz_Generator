@@ -5,27 +5,31 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
-    "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "preview": "nuxt preview"
   },
   "devDependencies": {
+    "@invictus.codes/nuxt-vuetify": "^0.2.20",
     "@nuxtjs/color-mode": "^3.2.0",
     "@nuxtjs/tailwindcss": "^6.6.5",
-    "nuxt": "^3.3.2"
+    "@types/node": "^18",
+    "nuxt": "latest"
   },
   "overrides": {
     "vue": "latest"
   },
   "dependencies": {
     "@morev/vue-transitions": "^2.3.6",
+    "@nuxtjs/color-mode": "^3.2.0",
+    "@nuxtjs/tailwindcss": "^6.6.5",
     "@pinia/nuxt": "^0.4.7",
     "gsap": "^3.11.5",
     "langchain": "^0.0.51",
     "mathjs": "^11.8.0",
+    "nuxt": "latest",
     "openai": "^3.2.1",
     "openai-streams": "^5.0.0",
     "pinia": "^2.0.33",
     "sass": "^1.62.0",
-    "vuetify": "^3.2.1"
+    "vue": "latest"
   }
 }

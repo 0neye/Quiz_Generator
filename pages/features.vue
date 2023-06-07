@@ -1,12 +1,14 @@
 <template>
-    <main class="mx-24 mt-5 text-xl text-center">
-        <h3 class="text-4xl p-5 h-20 border-b-2 w-fit mx-auto mb-5">{{ title }}</h3>
+    <main class="mx-24 mt-10 text-xl text-center">
+        <h3 class="text-3xl md:text-4xl p-5 h-34 md:h-20 border-b-2 w-fit mx-auto mb-5">
+            {{ title }}
+        </h3>
         <p>
             Generate quizzes on any topic with ease, no text source required. All saved locally
             in your browser.
         </p>
     </main>
-    <section class="grid grid-cols-2 gap-4 mt-10 mx-10">
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-10 mx-10">
         <div class="card flex">
             <span class="material-symbols-outlined mr-4 text-6xl my-auto">unknown_document</span>
             <div>
@@ -53,13 +55,14 @@
 </template>
 
 <script setup lang="ts">
-const title = ref("WHAT MAKES Anyquiz GREAT?");
+const title = ref("What Makes Anyquiz Great?");
 onMounted(() => {
     textGenerationEffect(title, 25);
 });
 
 definePageMeta({
     layout: "default",
+    colorMode: "light",
 });
 </script>
 

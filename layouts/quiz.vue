@@ -7,18 +7,18 @@
     <div class="fixed top-0 w-full z-10">
       <nav class="flex items-center justify-between px-8 py-4 dark:bg-gray-950">
         <NuxtLink class="flex items-center space-x-2" to="/">
-          <img src="../assets/images/logo.png" alt="Logo" class="h-8 w-8" />
+          <img src="/images/logo.png" alt="Logo" class="h-8 w-8" />
           <span class="text-2xl font-bold">anyquiz</span>
         </NuxtLink>
         <div class="flex gap-3">
           <div class="btn flex" @click="copyQuiz">
             <span class="material-symbols-outlined mr-1">content_copy</span>
-            <span>Copy Quiz</span>
+            <span class="my-div hidden md:inline">Copy Quiz</span>
           </div>
           <div class="flex">
             <NuxtLink :to="`/app/topic-${topic}`" class="flex btn">
               <span class="material-symbols-outlined mr-1">quiz</span>
-              <span>Quizzes</span>
+              <span class="my-div hidden md:inline">Quizzes</span>
             </NuxtLink>
           </div>
         </div>
