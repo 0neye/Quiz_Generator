@@ -72,7 +72,7 @@ const props = defineProps<{
   callback: CallableFunction;
 }>();
 
-const typeOptions = ["Muliple Choice", "Fill-in-the-blank", "True or False"];
+const typeOptions = ["Multiple Choice", "Fill-in-the-blank", "True or False"];
 
 const title = ref("");
 const description = ref("");

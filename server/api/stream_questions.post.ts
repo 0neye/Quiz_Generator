@@ -1,14 +1,54 @@
 import { OpenAI } from "openai-streams/node";
 
-
+//TODO: still doesn't always use the correct question types, fit it.
 export default defineEventHandler(async (event) => {
     console.log("I'm in stream_questions.post.ts")
 
     //authorization
     const { openaiApiKey: OPENAI_API_KEY } = useRuntimeConfig()
     //prompts
-    const { topic, title, context, qNumber, qTypes } = await readBody(event)
-    console.log(`qTypes: ${qTypes}`)
+    const { topic, title, context, qNumber, qTypes: qTypesString } = await readBody(event)
+    console.log(`qTypes: ${qTypesString}`)
+
+    const qTypes = qTypesString.split(",");
+    const qTypeOptions = ["Multiple Choice", "Fill-in-the-blank", "True or False"];
+    const qTypeExamples = {
+        "Multiple Choice": [
+            "What is the capital of France?",
+            "How was Kennedy assassinated?",
+            "The first person to go to space is which of the following?",
+        ],
+        "Fill-in-the-blank": [
+            "The positive root of 2x^2 + 3x - 4 = 0 is ____.",
+            "____ was the first person to go to space.",
+            "The capital of France is ____.",
+        ],
+        "True or False": [
+            "True or false: An acid makes H+ ions in solution.",
+            "True or false: A pointer in programming is an integer that points to the location in memory of another variable.",
+            "True or false: The capital of France is New York.",
+        ]
+    };
+
+    // select examples
+    let selectedExamples: string[] = [];
+    // if 3 types, 1 example each, if 1 type 3 each, and 2, 2
+    const numOfExamplesPerType = qTypes.length === 3 ? 1 : (qTypes.length === 1 ? 3 : 2);
+    for (const qType of qTypeOptions) {
+        if (qTypesString.includes(qType)) {
+            selectedExamples = selectedExamples.concat(
+                qTypeExamples[qType].slice(0, numOfExamplesPerType)
+            );
+        }
+    }
+
+    // number them
+    selectedExamples.forEach((example, i) => {
+        selectedExamples[i] = `${i + 1}. ${example}`
+    })
+
+    //console.log(`selectedExamples: ${selectedExamples.join("\n")}`)
+
     const systemPrompt = `You are embedded in a quiz generator. Your job is to create helpful practice quiz questions given the information in the user message.
 
 Guidelines for creating effective questions:
@@ -16,16 +56,14 @@ Guidelines for creating effective questions:
 - Avoid using irrelevant material, trick questions, negative wording, or double negatives in the question stem.
 - Use familiar language and terminology that is appropriate for the target audience.
 
-You may create questions of the following types: ${qTypes}.
+You may ONLY respond with questions of these types: [${qTypes}].
 
-Label each question with a number like below:
-1. What is the capital of France?
-2. The capital of England is ___.
-3. True or false: The capital of the U.S. is New York.
+Label each question with a number like the below examples.
+${selectedExamples.join("\n")}
 
-Don't inlude answer options. Only follow the syntax above. Every question you generate must be solveable.`
+Don't inlude answer options. Only follow the syntax and question types listed above. Every question you generate must be solveable.`
 
-    const userPrompt = `<{Topic}>${topic}<{/Topic}>\n\n<{Quiz}>${title}<{/Quiz}>\n\n<{Context}>${context}\n ${qNumber} questions<{/Context}>\nReminder: Don't talk to me! I just want the questions.`
+    const userPrompt = `<{Topic}>${topic}<{/Topic}>\n\n<{Quiz}>${title}<{/Quiz}>\n\n<{Context}>${context}\n ${qNumber} questions<{/Context}>\nReminder: Don't talk to me! I just want questions of the given types.`
 
     const stream = await OpenAI(
         "chat",
