@@ -56,14 +56,14 @@ Guidelines for creating effective questions:
 - Avoid using irrelevant material, trick questions, negative wording, or double negatives in the question stem.
 - Use familiar language and terminology that is appropriate for the target audience.
 
-You may ONLY respond with questions of these types: [${qTypes}].
+You may ONLY respond with ${new Intl.ListFormat("en-US", { style: "short", type: "disjunction" }).format(qTypes)} questions.
 
-Label each question with a number like the below examples.
+Label each question with a number like the below examples:
 ${selectedExamples.join("\n")}
 
 Don't inlude answer options. Only follow the syntax and question types listed above. Every question you generate must be solveable.`
-
-    const userPrompt = `<{Topic}>${topic}<{/Topic}>\n\n<{Quiz}>${title}<{/Quiz}>\n\n<{Context}>${context}\n ${qNumber} questions<{/Context}>\nReminder: Don't talk to me! I just want questions of the given types.`
+    console.log(systemPrompt)
+    const userPrompt = `<{Topic}>${topic}<{/Topic}>\n\n<{Quiz Title}>${title}<{/Quiz Title}>\n\n<{Context}>${context}\n ${qNumber} questions<{/Context}>\nReminder: Don't talk to me! I just want questions of the given types.`
 
     const stream = await OpenAI(
         "chat",

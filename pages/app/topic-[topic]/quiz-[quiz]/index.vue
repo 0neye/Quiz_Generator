@@ -40,7 +40,7 @@ onMounted(() => {
   const thisQuiz = store.getQuiz(+topic, +quiz);
   // if any questions are not done straming, and it is currently not being streamed
   if (
-    thisQuiz.questions.length === 0 ||
+    thisQuiz.questions.length !== thisQuiz.settings.questionNumber ||
     (thisQuiz.questions.some((q) => !q.doneStreaming) && !thisQuiz.streaming)
   ) {
     streamQuiz(store, +topic, +quiz, update);
