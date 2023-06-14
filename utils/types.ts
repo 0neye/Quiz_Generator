@@ -16,6 +16,7 @@ interface Quiz {
     title: string // quiz title
     description: string // quiz description
     questions: Question[] // array of question objects
+    streaming: boolean // whether the quiz is currently streaming
     settings: QuizSettings
 }
 interface QuizSettings {

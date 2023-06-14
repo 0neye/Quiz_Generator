@@ -31,20 +31,21 @@ export const useTopicStore = defineStore('topicStore', () => {
         saveState()
     }
 
-    const addQuiz = (key: number, title: string, description: string, questions: Question[], settings: QuizSettings) => {
+    const addQuiz = (key: number, title: string, description: string, questions: Question[], streaming: boolean, settings: QuizSettings) => {
         const newQuiz: Quiz = {
-            id: topics[key].quizzes.length,
+            id: topics[key]?.quizzes.length,
             title,
             description,
             questions,
+            streaming,
             settings
         }
-        topics[key].quizzes.push(newQuiz)
+        topics[key]?.quizzes.push(newQuiz)
         saveState()
     }
 
     const removeQuiz = (topicId: number, quizId: number) => {
-        topics[topicId].quizzes = topics[topicId].quizzes.filter(q => q.id !== quizId)
+        topics[topicId].quizzes = topics[topicId]?.quizzes.filter(q => q.id !== quizId)
         saveState()
     }
 
@@ -62,11 +63,11 @@ export const useTopicStore = defineStore('topicStore', () => {
     }
 
     const getQuiz = (topicId: number, quizId: number) => {
-        return topics[topicId].quizzes[quizId]
+        return topics[topicId]?.quizzes[quizId]
     }
 
     const editQuiz = (topicId: number, quizId: number, action: CallableFunction) => {
-        action(topics[topicId].quizzes[quizId])
+        action(topics[topicId]?.quizzes[quizId])
         saveState()
     }
 

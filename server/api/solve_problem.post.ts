@@ -5,7 +5,7 @@ import { Configuration, OpenAIApi } from "openai";
 import { parseModelOutput } from "../utils/model_helper/functions";
 
 export default defineEventHandler(async (event) => {
-    console.log("I'm in solve_problem_new_2.post")
+    console.log("I'm in solve_problem.post")
     const { openaiApiKey: OPENAI_API_KEY, wolframID: WOLFRAM_ID } = useRuntimeConfig()
 
     const configuration = new Configuration({
@@ -147,15 +147,31 @@ Answer: [your answer]
 
 The last part of your response MUST be your final answer in that format.`
     const userPrompt = `<Context starts>${context || "None"}<Context ends>\nQuestion: ${question}`
-    const answerExprs = [/Answer:(.*)/]
+    const answerExprs = [/(Answer:(.*))|(Final answer:.*)|(Final Answer:.*)/]
     const answerPrefixes = ["answer:"]
 
     const thread = new ChatThread(openai, [
         { role: "system", content: systemPrompt }
     ])
-    const output = await thread.getResponse({ role: "user", content: userPrompt })
+
+    let output = await thread.getResponse({ role: "user", content: userPrompt })
+    let parsed = parseModelOutput(output, answerExprs, null, null)[0]
+
+    // retry n times
+    let n = 3;
+    while (parsed.type === "OutputError" && n > 0) {
+        n -= 1;
+        output = await thread.getResponse(
+            {
+                role: "user",
+                content: "I didn't see you return an answer. You may think more if needed, but you must say 'Answer: [your answer]' when done."
+            }
+        )
+        parsed = parseModelOutput(output, answerExprs, null, null)[0]
+    }
+
+    const answer = parsed.value.replace(answerPrefixes[0], "");
     console.log(`Got full thread: ${thread}`)
-    const answer = parseModelOutput(output, answerExprs, null, null)[0].value.replace(answerPrefixes[0], "")
     return { answer: answer, thoughts: thread.toString(2) }
 }
 
@@ -325,7 +341,7 @@ Mathematics: Step-by-Step Solutions, Algebra, Calculus & Analysis, Geometry, Sta
 Science & Technology: Units & Measures, Physics, Chemistry, Engineering, Computational Sciences, Earth Sciences, Materials, Transportation, etc.
 Society & Culture: People, Arts & Media, Dates & Times, Words & Linguistics, Money & Finance, Food & Nutrition, Political Geography, History, etc.
 Everyday Life: Personal Health, Personal Finance, Surprises, Entertainment, Household Science, Household Math, Hobbies, Today's World, etc.
-Also EXPENSIVE, so use the calculator instead if possible.`
+Also EXPENSIVE, so use the calculator instead if possible. Keep input BRIEF, and avoid filler words like 'solve'.`
     failure_patterns = []
     wolframID: string
     constructor(key: string) {
@@ -336,8 +352,8 @@ Also EXPENSIVE, so use the calculator instead if possible.`
         try {
             return await $fetch(uri)
         } catch (e) {
-            console.log(e)
-            return "That's not something WolframAlpha supports."
+            console.error(e.message)
+            return "That's not something WolframAlpha supports, or your input confused it. You may try again if necessary, though not more than twice."
         }
     }
 

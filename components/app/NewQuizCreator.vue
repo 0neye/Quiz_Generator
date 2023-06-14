@@ -72,7 +72,7 @@ const props = defineProps<{
   callback: CallableFunction;
 }>();
 
-const typeOptions = ["Muliple Choice", "Fill-in-the-blank", "True or False"];
+const typeOptions = ["Multiple Choice", "Fill-in-the-blank", "True or False"];
 
 const title = ref("");
 const description = ref("");
@@ -93,7 +93,7 @@ async function addQuiz() {
     //         context: `${description.value}`
     //     }
     // })
-    topicStore.addQuiz(props.topic.id, title.value, description.value, [], {
+    topicStore.addQuiz(props.topic.id, title.value, description.value, [], false, {
       questionNumber: +numberOfQuestions.value,
       questionTypes: questionTypes.value,
       fast: fast.value,
