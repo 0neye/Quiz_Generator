@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     const stream = await OpenAI(
         "chat",
         {
-            model: "gpt-3.5-turbo",
+            model: process.env.OPENAI_MODEL,
             messages: [
                 { "role": "system", "content": systemPrompt },
                 { "role": "user", "content": userPrompt }

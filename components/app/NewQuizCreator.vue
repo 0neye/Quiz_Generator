@@ -93,7 +93,7 @@ async function addQuiz() {
     //         context: `${description.value}`
     //     }
     // })
-    topicStore.addQuiz(props.topic.id, title.value, description.value, [], {
+    topicStore.addQuiz(props.topic.id, title.value, description.value, [], false, {
       questionNumber: +numberOfQuestions.value,
       questionTypes: questionTypes.value,
       fast: fast.value,

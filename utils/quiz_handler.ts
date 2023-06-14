@@ -55,6 +55,7 @@ async function getCorrectAnswer(question: Question, context: string): Promise<{ 
 async function streamQuestionAnswers(store: any, topic: number, q: Quiz, update: CallableFunction) {
     const thisSeed = Math.random();
 
+    //let quizText = "";
     // go through questions
     for (let index = 0; index < q?.questions.length; index++) {
         //questions.value.forEach(async (question, index) => {
@@ -90,10 +91,12 @@ async function streamQuestionAnswers(store: any, topic: number, q: Quiz, update:
                 }),
             });
 
+            //let questionText = "";
             // runs for every new token in the stream
             function answerHandler(value: string) {
                 answerText += value;
                 const thisQuestionText = `${index + 1}. ` + question.text + "\n" + answerText;
+                //questionText = thisQuestionText + "\n";
                 //console.log(thisQuestionText);
                 const thisQuestion = parseQuiz(thisQuestionText, thisSeed)[0];
                 //console.log("ThisQuestion: ", thisQuestion);
@@ -109,6 +112,7 @@ async function streamQuestionAnswers(store: any, topic: number, q: Quiz, update:
             await parseStream(answerStream, answerHandler);
 
             console.log(`Finished streaming answers for question ${index + 1}`);
+            //quizText += questionText;
 
             // set done streaming
             store.editQuiz(topic, q.id, (quiz: Quiz) => {
@@ -116,10 +120,26 @@ async function streamQuestionAnswers(store: any, topic: number, q: Quiz, update:
             })
         }
     }
+    //console.log("Quiz text: " + quizText);
 }
 
 
 export async function streamQuiz(store: any, topic: number, quiz: number, update: CallableFunction) {
+
+    // warn the user if they try to reload the page
+    window.onbeforeunload = function (event) {
+        //event.preventDefault();
+        store.editQuiz(topic, quiz, (quiz: Quiz) => {
+            quiz.streaming = false;
+        })
+        event.returnValue = null;
+        return null;
+    };
+
+    // flag the quiz as currently streaming
+    store.editQuiz(topic, quiz, (quiz: Quiz) => {
+        quiz.streaming = true;
+    })
 
     // // set all questions stream step to not started
     // store.editQuiz(topic, quiz, (quiz: Quiz) => {
@@ -140,7 +160,8 @@ export async function streamQuiz(store: any, topic: number, quiz: number, update
         // then get the answers
         await streamQuestionAnswers(store, topic, q, update);
 
-    } else {
+    } else if (q.questions.length != q.settings.questionNumber) {
+        // TODO: fix no answer showing as correct despite correct format (maybe in parser)
         // faster but less accurate
         const stream = await fetch("/api/fast", {
             method: "POST",
@@ -149,6 +170,8 @@ export async function streamQuiz(store: any, topic: number, quiz: number, update
                     }`,
                 title: `${store.getQuiz(topic, quiz)?.title}`,
                 context: `${store.getQuiz(topic, quiz)?.description}`,
+                qNumber: `${q?.settings.questionNumber}`,
+                qTypes: q?.settings.questionTypes?.join(", "),
             }),
         });
 
@@ -159,10 +182,29 @@ export async function streamQuiz(store: any, topic: number, quiz: number, update
             //console.log(quizText);
             store.editQuiz(topic, q.id, (quiz: Quiz) => {
                 quiz.questions = parseQuiz(quizText, thisSeed);
+
+                // set done streaming for all but the last question
+                for (let index = 0; index < quiz.questions.length - 1; index++) {
+                    quiz.questions[index].doneStreaming = true;
+                }
             });
             update();
         }
 
-        parseStream(stream, helper);
+        await parseStream(stream, helper);
+        //console.log("Quiz text: \n" + quizText);
+
+        // set done streaming for the last question
+        store.editQuiz(topic, q.id, (quiz: Quiz) => {
+            quiz.questions[quiz.questions.length - 1].doneStreaming = true;
+        })
     }
+
+    // reset the warning
+    window.onbeforeunload = null;
+
+    // reset streaming
+    store.editQuiz(topic, quiz, (quiz: Quiz) => {
+        quiz.streaming = false;
+    })
 }

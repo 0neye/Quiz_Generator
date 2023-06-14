@@ -31,12 +31,13 @@ export const useTopicStore = defineStore('topicStore', () => {
         saveState()
     }
 
-    const addQuiz = (key: number, title: string, description: string, questions: Question[], settings: QuizSettings) => {
+    const addQuiz = (key: number, title: string, description: string, questions: Question[], streaming: boolean, settings: QuizSettings) => {
         const newQuiz: Quiz = {
             id: topics[key]?.quizzes.length,
             title,
             description,
             questions,
+            streaming,
             settings
         }
         topics[key]?.quizzes.push(newQuiz)

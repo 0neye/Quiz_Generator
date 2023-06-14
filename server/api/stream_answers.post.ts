@@ -35,7 +35,7 @@ Only respond with answer options and the correct answer at the end. Only follow 
     const stream = await OpenAI(
         "chat",
         {
-            model: "gpt-3.5-turbo",
+            model: process.env.OPENAI_MODEL,
             messages: [
                 { "role": "system", "content": systemPrompt },
                 { "role": "user", "content": userPrompt }

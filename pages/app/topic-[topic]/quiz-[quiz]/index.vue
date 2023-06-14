@@ -37,7 +37,14 @@ onMounted(() => {
   // console.log(store.getTopic(+topic)?.quizzes)
   update();
 
-  streamQuiz(store, +topic, +quiz, update);
+  const thisQuiz = store.getQuiz(+topic, +quiz);
+  // if any questions are not done straming, and it is currently not being streamed
+  if (
+    thisQuiz.questions.length === 0 ||
+    (thisQuiz.questions.some((q) => !q.doneStreaming) && !thisQuiz.streaming)
+  ) {
+    streamQuiz(store, +topic, +quiz, update);
+  }
 
   oneTry = store.getQuiz(+topic, +quiz)?.settings.oneTry;
 });

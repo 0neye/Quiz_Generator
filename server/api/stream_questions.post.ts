@@ -68,7 +68,7 @@ Don't inlude answer options. Only follow the syntax and question types listed ab
     const stream = await OpenAI(
         "chat",
         {
-            model: "gpt-3.5-turbo",
+            model: process.env.OPENAI_MODEL,
             messages: [
                 { "role": "system", "content": systemPrompt },
                 { "role": "user", "content": userPrompt }

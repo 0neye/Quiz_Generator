@@ -5,7 +5,7 @@ import { Configuration, OpenAIApi } from "openai";
 import { parseModelOutput } from "../utils/model_helper/functions";
 
 export default defineEventHandler(async (event) => {
-    console.log("I'm in solve_problem_new_2.post")
+    console.log("I'm in solve_problem.post")
     const { openaiApiKey: OPENAI_API_KEY, wolframID: WOLFRAM_ID } = useRuntimeConfig()
 
     const configuration = new Configuration({

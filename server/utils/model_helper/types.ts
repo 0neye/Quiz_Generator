@@ -1,4 +1,5 @@
 import { OpenAIApi, ChatCompletionRequestMessage, ChatCompletionResponseMessage } from "openai";
+import { env } from "process";
 export interface Tool {
     name: string
     description: string // uses and input format
@@ -42,7 +43,7 @@ export class ChatThread {
     async getResponse(message: ChatCompletionRequestMessage): Promise<string> {
         this.messages.push(message)
         const response = await this.openai.createChatCompletion({
-            model: "gpt-3.5-turbo",
+            model: process.env.OPENAI_MODEL,
             temperature: 0.5,
             messages: this.messages,
         })

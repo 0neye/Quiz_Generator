@@ -66,7 +66,7 @@ Do NOT respond to the user's message in any way that is not the questions of the
     const stream = await OpenAI(
         "chat",
         {
-            model: "gpt-3.5-turbo",
+            model: process.env.OPENAI_MODEL,
             messages: [
                 { "role": "system", "content": systemPrompt },
                 { "role": "user", "content": userPrompt }
