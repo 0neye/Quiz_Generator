@@ -128,12 +128,12 @@ export async function streamQuiz(store: any, topic: number, quiz: number, update
 
     // warn the user if they try to reload the page
     window.onbeforeunload = function (event) {
-        //event.preventDefault();
+        event.preventDefault();
         store.editQuiz(topic, quiz, (quiz: Quiz) => {
             quiz.streaming = false;
         })
-        event.returnValue = null;
-        return null;
+        event.returnValue = "";
+        return "";
     };
 
     // flag the quiz as currently streaming
