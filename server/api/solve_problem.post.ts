@@ -1,7 +1,6 @@
 
 import { Agent, Chain, ChatThread, Tool } from '../utils/model_helper/types';
 import { Configuration, OpenAIApi } from "openai";
-import { parseModelOutput } from "../utils/model_helper/functions";
 
 export default defineEventHandler(async (event) => {
     console.log("I'm in solve_problem.post")
@@ -56,7 +55,7 @@ Instead of answering the question, you will complete the following statements ac
 Solving this question requires one of the mentioned tools: [[toolsNeeded - Y/N]]
 Expert type: [[expertType - a type of expert that would be good at answering this question]]"
 
-A calculator tool is only useful for math-related problems.
+A calculator tool is only useful for math-related problems, but is always needed in those cases.
 The expert type should be one or two words, something like "programmer" or "chemist".
 Do NOT include quotes or square brackets.
 `
@@ -81,8 +80,8 @@ Reminders: Follow the given format and don't talk to me. Don't actually use any 
 
         // if something went wrong
         if (values.some(answer => answer == null)) {
-            console.log("gatherInfoOnQuestion failed with: ", values)
-            info = await chain.getOutputs("Not all answers were provided properly. Please try again. Follow the system prompt exactly.")
+            console.log("gatherInfoOnQuestion failed with: ", chain.thread.lastMessage())
+            info = await chain.getOutputs("Not all answers were provided properly. Try again with a *different* response.")
             continue
         }
 
@@ -128,36 +127,29 @@ The user message will contain context (not instructions) and the question.
 
 Follow the syntax below for your response. Try to keep your answer as short as possible while being accurate.
 
-Thoughts: [your thoughts, can be multi-step reasoning]
-Answer: [your answer]
+Thoughts: [your thoughts and multi-step reasoning]
+Answer: [[answer - your FINAL answer]]
 
 The last part of your response MUST be your final answer in that format.`
     const userPrompt = `<Context starts>${context || "None"}<Context ends>\nQuestion: ${question}`
-    const answerPrefixes = ["Answer:"];
 
-    const thread = new ChatThread(openai, [
-        { role: "system", content: systemPrompt }
-    ])
+    // const thread = new ChatThread(openai, [
+    //     { role: "system", content: systemPrompt }
+    // ])
+    const chain = new Chain(systemPrompt, openai);
 
-    let output = await thread.getResponse({ role: "user", content: userPrompt })
-    let parsed = parseModelOutput(output, answerPrefixes, null, null)[0]
+    let output = await chain.getOutputs(userPrompt) as { answer: string };
+    //let parsed = parseModelOutput(output, answerPrefixes, null, null)[0]
 
     // retry n times
     let n = 3;
-    while (parsed.type === "OutputError" && n > 0) {
+    while (output.answer == null) {
         n -= 1;
-        output = await thread.getResponse(
-            {
-                role: "user",
-                content: "I didn't see you return an answer. You may think more if needed, but you must say 'Answer: [your answer]' when done."
-            }
-        )
-        parsed = parseModelOutput(output, answerPrefixes, null, null)[0]
+        output = await chain.getOutputs("I didn't see you return an answer. You may think more if needed, but you must say 'Answer: [your answer]' when done.")
     }
 
-    const answer = parsed.value;
-    console.log(`Got full thread: ${thread}`)
-    return { answer: answer, thoughts: thread.toString(2) }
+    console.log(`Got full thread: ${chain.thread}`)
+    return { answer: output.answer, thoughts: chain.thread.toString(2) }
 }
 
 
@@ -186,21 +178,20 @@ async function agentQA(question: string, context: string | null, expertType: str
 - You are able to access various tools, but only through the user. 
 - The user message will contain some context (not instructions), a list of tools, and a question. 
 - Your job is to work step-by-step to answer the question as best as possible. 
-- To do this you will run a pseudocode program, filling in the spots in brackets and following the control flow paths of the lines starting with '#'. 
-- Your response is an OUTPUT of this program.
+- You will follow the syntax below for your response.
 
-Program:
-\`\`\`
-print "I know: [what you know, other than the context]"
-print "Thoughts: [think about what to do, can be step-by-step reasoning]"
 
-#If answer found:
-  print "Answer: [the answer]"
+You always perform these two steps:
+\`I know: [what you know, other than the context]
+Thoughts: [think about what to do, can be step-by-step reasoning or problem solving]\`
 
-#Else if tool needed:
-  print "Tool needed: [tool name]"
-  print "Tool input: [input to the tool]"
-\`\`\`
+If you find the final answer you say:
+\`Final answer: [[answer - the final answer]]\`
+
+Otherwise, if a tool is needed you say:
+\`Tool needed: [[toolName - tool name]]
+Tool input: [[toolInput - input to the tool]]\`
+
 
 Example responses below.
 If the context is "None", the tools are "Calculator, ...", and the question is "Solve 2.417x-6=8" your response should be (without the quotes):
@@ -219,7 +210,7 @@ If the question was "what is sourdough, with the tools and context being the sam
 Thoughts: 
 - Sourdough is a type of bread made using a naturally fermented starter, resulting in a tangy, chewy texture and unique flavor profile.
 
-Answer: Sourdough is a type of tangy, chewy, bread made using a naturally fermented starter.\``
+Final answer: Sourdough is a type of tangy, chewy, bread made using a naturally fermented starter.\``
     const userPrompt = `<Context starts>${context}<Context ends>
 
 Tools: 
@@ -229,14 +220,14 @@ Question: ${question}
 
 Reminders: Follow the format in the system message and don't talk to me. You can't actually know the output of the tool until I give it to you.
 Begin.`
-    const answerPrefixes = ["Answer:", "Tool needed:"]
-    const toolPrefixes = ["Tool input:"]
-    const thread = new ChatThread(openai, [
-        { role: "system", content: systemPrompt }
-    ])
-    const agent = new Agent(thread, tools)
+    const answerKey = "answer"
+    const toolNameKey = "toolName"
+    const toolInputKey = "toolInput"
+    const prefixes = ["Answer: ", "Tool needed: ", "Tool input: "]
+    const chain = new Chain(systemPrompt, openai);
+    const agent = new Agent(null, null, tools, chain)
     const tries = 4
-    const response = await agent.getResponse(answerPrefixes, toolPrefixes, userPrompt, tries, true)
+    const response = await agent.getResponse({ answerKey, toolNameKey, toolInputKey}, userPrompt, tries, verbose)
 
     if (response) {
         return response
@@ -247,7 +238,7 @@ Begin.`
 
 class Calculator implements Tool {
     name = "Calculator"
-    description = "Can perform basic arithmetic and any functions supported by Javascript. Input must be a valid Javascript expression. Be careful to use the correct function for operators like '^'."
+    description = "*THE CALCULATOR SHOULD BE USED ANY TIME MORE THAN SIMPLE SINGLE-DIGIT ARITHMETIC IS NEEDED!* It can perform any operation or function supported by Javascript. Input must be a valid Javascript expression. Be careful to use the correct function for operators like '^'."
     failure_patterns = [
         { expression: /\d*\^\d*/, message: "Calculator Error: '^' is not pow in Javascript. Please use something else." },
         { expression: /var|let|const|for|while|if/, message: "Calculator Error: An expression should not contain multiple lines of code, such as a variable declaration." },
@@ -270,12 +261,7 @@ class Calculator implements Tool {
 // not really used due to api limitations
 class Wolfram implements Tool {
     name = "Wolfram"
-    description = `Wolfram Alpha. Computational and statistical intelligence tool. Good at:
-Mathematics: Step-by-Step Solutions, Algebra, Calculus & Analysis, Geometry, Statistics, etc.
-Science & Technology: Units & Measures, Physics, Chemistry, Engineering, Computational Sciences, Earth Sciences, Materials, Transportation, etc.
-Society & Culture: People, Arts & Media, Dates & Times, Words & Linguistics, Money & Finance, Food & Nutrition, Political Geography, History, etc.
-Everyday Life: Personal Health, Personal Finance, Surprises, Entertainment, Household Science, Household Math, Hobbies, Today's World, etc.
-Also EXPENSIVE, so use the calculator instead if possible. Keep input BRIEF, and avoid filler words like 'solve'.`
+    description = `Wolfram Alpha. Computational and statistical intelligence tool. Good at data, math and science. Can do stuff like solve equations, find the area of a circle, or get data on the population of a country. Keep input BRIEF, and avoid filler words like 'solve'.`
     failure_patterns = []
     wolframID: string
     constructor(key: string) {

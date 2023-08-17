@@ -1,6 +1,5 @@
 <template>
   <client-only placeholder="Loading...">
-
     <Head>
       <Title>Quiz | {{ store.getQuiz(+topic, +quiz)?.title }}</Title>
       <Meta name="description" :content="store.getQuiz(+topic, +quiz)?.description" />
@@ -9,7 +8,12 @@
     <nav></nav>
     <div class="flex flex-col gap-10" :key="reRender">
       <div class="quiz" v-for="(_, i) in questions">
-        <QuizQuestion :quiz="+quiz" :topic="+topic" :question-index="i" :oneTry="oneTry" />
+        <QuizQuestion
+          :quiz="+quiz"
+          :topic="+topic"
+          :question-index="i"
+          :oneTry="oneTry"
+        />
       </div>
     </div>
     <div class="p-16"></div>

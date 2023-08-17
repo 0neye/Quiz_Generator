@@ -42,13 +42,6 @@ export default defineEventHandler(async (event) => {
         }
     }
 
-    // number them
-    selectedExamples.forEach((example, i) => {
-        selectedExamples[i] = `${i + 1}. ${example}`
-    })
-
-    //console.log(`selectedExamples: ${selectedExamples.join("\n")}`)
-
     const systemPrompt = `You are embedded in a quiz generator. Your job is to create helpful practice quiz questions given the information in the user message.
 
 Guidelines for creating effective questions:

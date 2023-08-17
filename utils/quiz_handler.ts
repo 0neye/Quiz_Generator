@@ -162,7 +162,6 @@ export async function streamQuiz(store: any, topic: number, quiz: number, update
         await streamQuestionAnswers(store, topic, q, update);
 
     } else if (q.questions.length != q.settings.questionNumber) {
-        // TODO: fix no answer showing as correct despite correct format (maybe in parser)
         // faster but less accurate
         const stream = await fetch("/api/fast", {
             method: "POST",
@@ -208,4 +207,11 @@ export async function streamQuiz(store: any, topic: number, quiz: number, update
     store.editQuiz(topic, quiz, (quiz: Quiz) => {
         quiz.streaming = false;
     })
+
+    // if something went wrong and some questions didn't stream, try again
+    if (
+        q.questions.length !== q.settings.questionNumber ||
+        (q.questions.some((q) => !q.doneStreaming) && !q.streaming)
+      )
+        streamQuiz(store, topic, quiz, update);
 }

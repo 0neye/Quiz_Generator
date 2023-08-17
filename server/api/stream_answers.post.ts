@@ -29,7 +29,7 @@ ANSWER: B'
 Only respond with answer options and the correct answer at the end. Only follow the syntax above. Letter your answer options.`
 
     const { question, answer } = await readBody(event)
-    const userPrompt = `Question: "${question}"\n\nCorrect answer: "${answer || "<null>"}"`
+    const userPrompt = `Question: ${question}\n\nCorrect answer: ${answer || "<null>"}`
     console.log(`${userPrompt}`)
     const stream = await OpenAI(
         "chat",

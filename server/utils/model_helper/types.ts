@@ -1,7 +1,6 @@
-import { OpenAI } from 'openai-streams/node';
+
 import { OpenAIApi, ChatCompletionRequestMessage, ChatCompletionResponseMessage } from "openai";
 
-import { parseModelOutput } from "./functions";
 export interface Tool {
     name: string
     description: string // uses and input format
@@ -15,19 +14,16 @@ export interface FailurePattern {
     expression: RegExp
     message: string
 }
-export type OutputType = 'ModelAnswer' | 'ModelToolUse' | 'OutputError';
-
-export interface ParseOutput {
-    type: OutputType;
-    value: string;
-}
 
 export class ChatThread {
     openai: OpenAIApi
     messages: ChatCompletionRequestMessage[]
-    constructor(openai: OpenAIApi, messages: ChatCompletionRequestMessage[]) {
+    model: string
+
+    constructor(openai: OpenAIApi, messages: ChatCompletionRequestMessage[], model: string = null) {
         this.openai = openai
         this.messages = messages
+        this.model = model ? model : process.env.OPENAI_MODEL
     }
 
     /**
@@ -39,7 +35,7 @@ export class ChatThread {
     async getResponse(message: ChatCompletionRequestMessage): Promise<string> {
         this.messages.push(message)
         const response = await this.openai.createChatCompletion({
-            model: process.env.OPENAI_MODEL,
+            model: this.model,
             temperature: 0.5,
             messages: this.messages,
         })
@@ -67,6 +63,10 @@ export class ChatThread {
     toString(sliceIndex: number = 1): string {
         return JSON.stringify(this.messages.slice(sliceIndex), null, 2)
     }
+
+    lastMessage(): string {
+        return this.messages[this.messages.length - 1].content
+    }
 }
 
 export class Chain {
@@ -83,17 +83,20 @@ export class Chain {
         return ""
     }
 
-    constructor(systemMessage: string, openai: OpenAIApi) {
-        this.thread = new ChatThread(openai, [{ role: "system", content: systemMessage }])
+    constructor(systemMessage: string = null, openai: OpenAIApi = null, prefixes: string[] = [], thread: ChatThread = null) {
+        if (!systemMessage && !openai && !thread)
+            throw new Error("Either systemMessage and openai, or thread must be provided")
+        this.thread = thread ? thread : new ChatThread(openai, [{ role: "system", content: systemMessage }])
         this.response_object = {}
-        this.output_point_prefixes = []
+        this.output_point_prefixes = prefixes.length ? prefixes : []
         const outputPointExpr = /\[\[([^ \n]*) *- *(.*)\]\]/mg // [[field_name - model note]] -> [model note]
 
         // replace all occurrences in system message
         let match: RegExpExecArray | null = outputPointExpr.exec(systemMessage);
         while (match !== null) {
-            // get the prefixes
-            this.output_point_prefixes.push(Chain.getPrefix(systemMessage, match[0]))
+            // get the prefixes if not provided
+            if (!prefixes.length)
+                this.output_point_prefixes.push(Chain.getPrefix(systemMessage, match[0]))
             // get the field name
             const field_name = match[1];
             this.response_object[field_name] = null; // add a key and null value
@@ -144,78 +147,70 @@ export class Chain {
 
 
 export class Agent {
-    thread: ChatThread
+    chain: Chain
     tools: Tool[]
 
-    constructor(thread: ChatThread, tools: Tool[]) {
-        this.thread = thread
+    constructor(systemMessage: string = null, openai: OpenAIApi = null, tools: Tool[], chain: Chain = null) {
+        if (!systemMessage && !openai && !chain) throw new Error("Either systemMessage and openai, or chain must be provided.")
+        this.chain = chain ? chain : new Chain(systemMessage, openai)
         this.tools = tools
     }
-
+    
+    static validToolInput(tool: Tool, toolInput: string): {valid: boolean, message: string} {
+        for (const pattern of tool.failure_patterns) {
+            if (pattern.expression.test(toolInput)) {
+                // respond to the model with the error and get next response
+                return { valid: false, message: pattern.message }
+            }
+        }
+        return { valid: true, message: "" }
+    }
     /**
      * Retrieves a response from the model based on user input and other parameters.
      *
-     * @param {string[]} answerPrefixes - The prefixes used to identify an answer in the model output.
-     * @param {string[]} toolPrefixes - The prefixes used to identify a tool input in the model output.
+     * @param {{answerKey: string, toolNameKey: string, toolInputKey: string}} keys - The keys used in the system message
      * @param {string} userMessage - The user's input message.
      * @param {number} tries - The number of times to try getting a response from the model.
      * @param {boolean} [verbose=false] - Whether to log verbose output.
      * @return {Promise<{ answer: string, thoughts: string }>} A promise that resolves to an object containing the answer and thoughts (chat thread).
      */
-    async getResponse(answerPrefixes: string[], toolPrefixes: string[], userMessage: string, tries: number, verbose: boolean = false): Promise<{ answer: string, thoughts: string }> {
-        let output = await this.thread.userMessage(userMessage)
+    async getResponse(keys: { answerKey: string, toolNameKey: string, toolInputKey: string }, userMessage: string, tries: number, verbose: boolean = false): Promise<{ answer: string, thoughts: string }> {
+        let outputs = await this.chain.getOutputs(userMessage)
 
-        // main loop, try n times
+        // main loop, try #times 
         for (let i = 0; i < tries; i++) {
-            const parsed = parseModelOutput(output, answerPrefixes, toolPrefixes, null)
-            let errorMsg = ""
-            parsed.forEach((answer) => {
-                if (answer.type === "OutputError") {
-                    errorMsg += answer.value + "\n"
-                }
-            })
-            if (errorMsg !== "") {
-                if (verbose) { console.log(`Got error msg: ${errorMsg}`) }
-                // respond to the model with the error and get next response
-                output = await this.thread.userMessage(errorMsg)
-                if (verbose) { console.log(`Got response to error msg: ${output}`) }
-                continue
-            }
+            const [answer, toolName, toolInput] = [outputs[keys.answerKey], outputs[keys.toolNameKey], outputs[keys.toolInputKey]]
             // if it's using a tool
-            if (parsed.length === 2) {
-                // const cleaned = parsed.map((answer) =>
-                //     answer.value.replace(answerPrefixes[1], "").replace(toolPrefixes[0], "").replaceAll("\"", "").trim()
-                // )
-                const [toolNeeded, toolInput] = parsed
-                const tool = this.tools.find((tool) => tool.name.toLocaleLowerCase() === toolNeeded.value.toLocaleLowerCase())
+            if (toolName && toolInput) {
+
+                const tool = this.tools.find((tool) => tool.name.toLocaleLowerCase() === toolName.toLocaleLowerCase())
                 if (!tool) {
                     // respond to the model with the error and get next response
-                    output = await this.thread.userMessage(`Tool not found: "${toolNeeded}"`)
-                    if (verbose) { console.log(`Got response to !tool: ${output}`) }
+                    outputs = await this.chain.getOutputs(`Tool not found: "${toolName}"`)
+                    if (verbose) { console.log(`Got response to !tool: ${this.chain.thread.lastMessage()}`) }
                     continue
                 }
                 if (verbose) { console.log(`Input to ${tool.name}: ${toolInput}`) }
-                const toolResult = await tool.run(toolInput.value)
+                const validated = Agent.validToolInput(tool, toolInput);
+                if (!validated.valid) {
+                    // respond to the model with the error and get next response
+                    outputs = await this.chain.getOutputs(`Invalid tool input: ${validated.message}`)
+                    if (verbose) { console.log(`Got response to tool failure: ${this.chain.thread.lastMessage()}`) }
+                    continue
+                }
+                const toolResult = await tool.run(toolInput)
                 if (verbose) { console.log(`${tool.name} returned: ${toolResult}`) }
-                output = await this.thread.userMessage(`${tool.name} returned: \`${toolResult}\`\nIf this is the full answer respond with 'Answer: [answer]', else continue following the system instructions.`)
+                outputs = await this.chain.getOutputs(`${tool.name} returned: \`${toolResult}\`\nIf this is the full answer respond with your answer using the given syntax, else continue following the system instructions.`)
                 continue
             }
             // if it's got the answer
-            else if (parsed.length === 1) {
-                if (parsed[0].type === "ModelAnswer") {
-                    const answer = parsed[0].value.replace(answerPrefixes[0], "").trim()
-                    if (verbose) { console.log(`Got full thread: ${this.thread}`) }
-                    return { answer: answer, thoughts: this.thread.toString(2) }
-                }
-                else {
-                    // the model must have tried to use a tool without an input
-                    output = await this.thread.userMessage(`It seems like you tried to use a tool without an input. Try again.`)
-                    continue
-                }
+            else if (answer) {
+                if (verbose) { console.log(`Got full thread: ${this.chain.thread}`) }
+                return { answer: answer, thoughts: this.chain.thread.toString(2) }
             }
             // if it's nothing
             else {
-                output = await this.thread.userMessage(`It's fine, you can think. Just remember you have ${tries - i - 1} more responses left. Follow the system instructions.`)
+                outputs = await this.chain.getOutputs(`It's fine, you can think. Just remember you have ${tries - i - 1} more responses left. Follow the system instructions.`)
                 continue
             }
         }
