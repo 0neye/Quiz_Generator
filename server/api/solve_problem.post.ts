@@ -1,6 +1,5 @@
 
-import { ChatThread } from '../utils/model_helper/types';
-import { Tool } from "../utils/model_helper/types";
+import { Agent, Chain, ChatThread, Tool } from '../utils/model_helper/types';
 import { Configuration, OpenAIApi } from "openai";
 import { parseModelOutput } from "../utils/model_helper/functions";
 
@@ -19,7 +18,7 @@ export default defineEventHandler(async (event) => {
     let result = { answer: "", thoughts: "" }
     const { contextHelpful, toolsNeeded, expertType } = await gatherInfoOnQuestion(context, tools, question, openai)
     console.log(`Got info.\ncontextHelpful: ${contextHelpful}\ntoolsNeeded: ${toolsNeeded}\nexpertType: ${expertType}`)
-    if (toolsNeeded.trim() == "y") {
+    if (toolsNeeded) {
         result = await agentQA(question, contextHelpful ? context : null, expertType, tools, openai)
     }
     else {
@@ -44,21 +43,22 @@ export default defineEventHandler(async (event) => {
  * @param {Tool[]} tools - An array of tools that may be useful for answering the question
  * @param {string} question - The actual question being asked
  * @param {OpenAIApi} openai - An instance of the OpenAIApi class used to communicate with the OpenAI API
- * @return {Promise<{ contextHelpful: string, toolsNeeded: string, expertType: string }>} - An object containing information about the 
+ * @return {Promise<{ contextHelpful: boolean, toolsNeeded: boolean, expertType: string }>} - An object containing information about the 
  * question and the resources needed to answer it, as well as the type of expert who would be most useful in answering it
  */
 async function gatherInfoOnQuestion(context: string, tools: Tool[], question: string, openai: OpenAIApi):
-    Promise<{ contextHelpful: string, toolsNeeded: string, expertType: string }> {
+    Promise<{ contextHelpful: boolean, toolsNeeded: boolean, expertType: string }> {
     const SYSTEM_PROMPT =
         `The user message will contain context (not instructions), a list of tools, and a question. 
 Instead of answering the question, you will complete the following statements accurately. Only use the below format and fill in the brackets.
 
-"The context is helpful in answering the question: [Y/N]
-Solving this question requires one of the mentioned tools: [Y/N]
-Expert type: [a type of expert that would be good at answering this question]"
+"The context is helpful in answering the question: [[contextHelpful - Y/N]]
+Solving this question requires one of the mentioned tools: [[toolsNeeded - Y/N]]
+Expert type: [[expertType - a type of expert that would be good at answering this question]]"
 
 A calculator tool is only useful for math-related problems.
 The expert type should be one or two words, something like "programmer" or "chemist".
+Do NOT include quotes or square brackets.
 `
 
     const USER_PROMPT =
@@ -70,60 +70,46 @@ Question: ${question}
 
 Reminders: Follow the given format and don't talk to me. Don't actually use any tools.`
 
-    // const response = await openai.createChatCompletion({
-    //     model: "gpt-3.5-turbo",
-    //     temperature: 0.5,
-    //     messages: [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: USER_PROMPT }],
-    // })
-    // const output = response.data.choices[0].message?.content as string
-    const thread = new ChatThread(openai, [
-        { role: "system", content: SYSTEM_PROMPT }
-    ])
-    let output = await thread.getResponse({ role: "user", content: USER_PROMPT })
 
-    const answerExprs = [/The context is helpful in answering the question:(.*)\n/, /Solving this question requires one of the mentioned tools:(.*)/, /Expert type:(.*)/]
-    const answerPrefixes = ["the context is helpful in answering the question:", "solving this question requires one of the mentioned tools:", "expert type:"]
+    const chain = new Chain(SYSTEM_PROMPT, openai);
+
+    let info = await chain.getOutputs(USER_PROMPT) as { contextHelpful: string, toolsNeeded: string, expertType: string };
 
     // retry i times
-    for (let i = 0; i < 2; i++) {
-        const parsed = parseModelOutput(output, answerExprs, null, null)
-        let errorMsg = ""
-        parsed.forEach((answer) => {
-            if (answer.type === "OutputError") {
-                errorMsg += answer.value + "\n"
-            }
-        })
-        if (errorMsg !== "") {
-            console.log(`Got error msg: ${errorMsg}`)
-            // respond to the model with the error and get next response
-            output = await thread.getResponse({ role: "user", content: errorMsg })
-            console.log(`Got response to error msg: ${output}`)
+    for (let i = 0; i < 3; i++) {
+        const values = Object.values(info)
+
+        // if something went wrong
+        if (values.some(answer => answer == null)) {
+            console.log("gatherInfoOnQuestion failed with: ", values)
+            info = await chain.getOutputs("Not all answers were provided properly. Please try again. Follow the system prompt exactly.")
             continue
         }
 
-        //console.log(`Got full thread: ${thread}`)
-        // console.log(JSON.stringify(parsed, null, 2))
-
         // otherwise get the data and return
-        const cleaned = parsed.map((answer, index) =>
-            answer.value
+        const cleaned = Object.values(info).map(answer =>
+            answer
                 .trim()
                 .toLowerCase()
-                .replace(/\[|\]|\./g, "")
+                .replace(/\[|\]|\.|\"/g, "")
                 .replace("no", "n")
                 .replace("yes", "y")
-                .replace(answerPrefixes[index], "")
+                //.replace(answerPrefixes[index], "")
         )
-        const [contextHelpful, toolsNeeded, expertType, answer] = cleaned
+        const [contextHelpful, toolsNeeded, expertType] = cleaned
         return {
-            contextHelpful,
-            toolsNeeded,
+            contextHelpful: (contextHelpful === "y"),
+            toolsNeeded: (toolsNeeded === "y"),
             expertType
         }
     }
-    throw new Error("gatherInfoOnQuestion failed too many times")
+    console.log("gatherInfoOnQuestion failed too many times")
+    return { // return the most conservative answer
+        contextHelpful: true,
+        toolsNeeded: true,
+        expertType: "expert"
+    }
 }
-
 
 /**
  * An asynchronous function that takes a question, context, expertType, and openai as parameters and returns an object with an answer and thoughts.
@@ -147,15 +133,14 @@ Answer: [your answer]
 
 The last part of your response MUST be your final answer in that format.`
     const userPrompt = `<Context starts>${context || "None"}<Context ends>\nQuestion: ${question}`
-    const answerExprs = [/(Answer:(.*))|(Final answer:.*)|(Final Answer:.*)/]
-    const answerPrefixes = ["answer:"]
+    const answerPrefixes = ["Answer:"];
 
     const thread = new ChatThread(openai, [
         { role: "system", content: systemPrompt }
     ])
 
     let output = await thread.getResponse({ role: "user", content: userPrompt })
-    let parsed = parseModelOutput(output, answerExprs, null, null)[0]
+    let parsed = parseModelOutput(output, answerPrefixes, null, null)[0]
 
     // retry n times
     let n = 3;
@@ -167,10 +152,10 @@ The last part of your response MUST be your final answer in that format.`
                 content: "I didn't see you return an answer. You may think more if needed, but you must say 'Answer: [your answer]' when done."
             }
         )
-        parsed = parseModelOutput(output, answerExprs, null, null)[0]
+        parsed = parseModelOutput(output, answerPrefixes, null, null)[0]
     }
 
-    const answer = parsed.value.replace(answerPrefixes[0], "");
+    const answer = parsed.value;
     console.log(`Got full thread: ${thread}`)
     return { answer: answer, thoughts: thread.toString(2) }
 }
@@ -244,68 +229,17 @@ Question: ${question}
 
 Reminders: Follow the format in the system message and don't talk to me. You can't actually know the output of the tool until I give it to you.
 Begin.`
-    const answerExprs = [/Answer:(.*)/, /Tool needed:(.*)/]
     const answerPrefixes = ["Answer:", "Tool needed:"]
-    const toolExprs = [/Tool input:(.*)/]
     const toolPrefixes = ["Tool input:"]
     const thread = new ChatThread(openai, [
         { role: "system", content: systemPrompt }
     ])
-    let output = await thread.getResponse({ role: "user", content: userPrompt })
+    const agent = new Agent(thread, tools)
+    const tries = 4
+    const response = await agent.getResponse(answerPrefixes, toolPrefixes, userPrompt, tries, true)
 
-    // main loop, try n times
-    const n = 4
-    for (let i = 0; i < n; i++) {
-        const parsed = parseModelOutput(output, answerExprs, toolExprs, null)
-        let errorMsg = ""
-        parsed.forEach((answer) => {
-            if (answer.type === "OutputError") {
-                errorMsg += answer.value + "\n"
-            }
-        })
-        if (errorMsg !== "") {
-            if (verbose) { console.log(`Got error msg: ${errorMsg}`) }
-            // respond to the model with the error and get next response
-            output = await thread.getResponse({ role: "user", content: errorMsg })
-            if (verbose) { console.log(`Got response to error msg: ${output}`) }
-            continue
-        }
-        // if it's using a tool
-        if (parsed.length === 2) {
-            const cleaned = parsed.map((answer) =>
-                answer.value.replace(answerPrefixes[1], "").replace(toolPrefixes[0], "").replaceAll("\"", "").trim()
-            )
-            const [toolNeeded, toolInput] = cleaned
-            const tool = tools.find((tool) => tool.name.toLocaleLowerCase() === toolNeeded.toLocaleLowerCase())
-            if (!tool) {
-                // respond to the model with the error and get next response
-                output = await thread.getResponse({ role: "user", content: `Tool not found: "${toolNeeded}"` })
-                if (verbose) { console.log(`Got response to !tool: ${output}`) }
-                continue
-            }
-            if (verbose) { console.log(`Input to ${tool.name}: ${toolInput}`) }
-            const toolResult = await tool.run(toolInput)
-            if (verbose) { console.log(`${tool.name} returned: ${toolResult}`) }
-            output = await thread.getResponse({
-                role: "user",
-                content: `${tool.name} returned: \`${toolResult}\`\nIf this is the full answer respond with 'Answer: [answer]', else continue following the system instructions.`
-            })
-            continue
-        }
-        // if it's got the answer
-        else if (parsed.length === 1) {
-            const answer = parsed[0].value.replace(answerPrefixes[0], "").trim()
-            if (verbose) { console.log(`Got full thread: ${thread}`) }
-            return { answer: answer, thoughts: thread.toString(2) }
-        }
-        // if it's nothing
-        else {
-            output = await thread.getResponse({
-                role: "user",
-                content: `It's fine, you can think. Just remember you have ${n - i - 1} more responses left. Follow the system instructions.`
-            })
-            continue
-        }
+    if (response) {
+        return response
     }
     // fallback to simpleQA
     return await simpleQA(question, context, expertType, openai)
