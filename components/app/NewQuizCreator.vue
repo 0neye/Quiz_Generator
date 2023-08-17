@@ -31,8 +31,26 @@
         <!-- this appears really thin and using stuff like 'w-max' doesn't work -->
         <div class="flex flex-col w-full">
           <v-text-field v-model="title" label="Title" />
-          <v-select theme="dark" label="Question Number" v-model="numberOfQuestions" :items="['3', '5', '7', '10']" />
-          <v-select theme="dark" label="Question Types" v-model="questionTypes" multiple chips :items="typeOptions" />
+          <v-select
+            theme="dark"
+            label="Question Number"
+            v-model="numberOfQuestions"
+            :items="['3', '5', '7', '10']"
+          />
+          <v-select
+            theme="dark"
+            label="Question Types"
+            v-model="questionTypes"
+            multiple
+            chips
+            :items="typeOptions"
+          />
+          <v-select
+            theme="dark"
+            label="Difficulty"
+            v-model="difficulty"
+            :items="['Elementary School', 'Middle School', 'High School', 'College']"
+          />
           <v-menu :close-on-content-click="false">
             <template v-slot:activator="{ props }">
               <div v-bind="props" class="flex mb-8 text-gray-400">
@@ -55,8 +73,12 @@
           </div>
         </div>
         <div class="flex flex-col w-full">
-          <v-textarea v-model="description" label="Context" prepend-inner-icon="mdi-segment"
-            messages="Context can be lecture notes, learning objectives, and/or info on what you want to study." />
+          <v-textarea
+            v-model="description"
+            label="Context"
+            prepend-inner-icon="mdi-segment"
+            messages="Context can be lecture notes, learning objectives, and/or info on what you want to study."
+          />
         </div>
       </div>
     </div>
@@ -80,6 +102,7 @@ const numberOfQuestions = ref("3");
 const questionTypes = ref(typeOptions);
 const fast = ref(false);
 const oneTry = ref(true);
+const difficulty = ref("Middle School");
 
 async function addQuiz() {
   console.log("Topic: ", props.topic);
@@ -98,9 +121,11 @@ async function addQuiz() {
       questionTypes: questionTypes.value,
       fast: fast.value,
       oneTry: oneTry.value,
+      difficulty: difficulty.value,
     });
     navigateTo(
-      `/app/topic-${props.topic.id}/quiz-${topicStore.getQuizzes(props.topic.id).length - 1
+      `/app/topic-${props.topic.id}/quiz-${
+        topicStore.getQuizzes(props.topic.id).length - 1
       }`
     );
   } else {

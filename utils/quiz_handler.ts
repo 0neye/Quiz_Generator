@@ -14,6 +14,7 @@ async function streamQuestionsText(store: any, topic: number, q: Quiz, update: C
             context: `${q?.description}`,
             qNumber: `${q?.settings.questionNumber}`,
             qTypes: q?.settings.questionTypes?.join(", "),
+            difficulty: `${q?.settings.difficulty}`,
         }),
     });
     let questionsText = "";

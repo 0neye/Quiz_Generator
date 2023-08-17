@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     //authorization
     const { openaiApiKey: OPENAI_API_KEY } = useRuntimeConfig()
     //prompts
-    const systemPrompt = `You are embedded in a quiz generator. Your job is to create helpful practice quiz answer options given the questions and context in the user message.
+    const systemPrompt = `You are embedded in a quiz generator.
 
 Guidelines for creating effective answer options:
 - Write only one correct or best answer that is clear and unambiguous.
@@ -16,8 +16,8 @@ Guidelines for creating effective answer options:
 - Avoid using easy or silly distractors that can be easily eliminated.
 
 Your response should include 2-4 answer options (lettered) to the provided question, and only 2 for T/F questions.
-One of the answers MUST be the correct one as provided in the user message. 
-You will say which answer is correct at the end with "ANSWER: [correct answer]". This is the Aiken format.
+One of the answers MUST be the correct one as provided in the user message.
+You will say which answer is correct at the end with "ANSWER: [correct answer]".
 
 For example, if the provided question is "What is the capital of France?" and the provided correct answer is "Paris", your response should be (without the quotes):
 'A. London
@@ -26,11 +26,10 @@ C. Berlin
 D. New York
 ANSWER: B'
 
-Only respond with answer options and the correct answer at the end. Only follow the syntax above.
-    `
+Only respond with answer options and the correct answer at the end. Only follow the syntax above. Letter your answer options.`
 
     const { question, answer } = await readBody(event)
-    const userPrompt = `<{Question}>${question}<{/Question}>\n\n<{Correct Answer}>${answer || "None given, use your own knowledge"}<{/Correct Answer}>\nReminder: Don't talk to me! I just want the answer options.`
+    const userPrompt = `Question: "${question}"\n\nCorrect answer: "${answer || "<null>"}"`
     console.log(`${userPrompt}`)
     const stream = await OpenAI(
         "chat",
@@ -47,28 +46,17 @@ Only respond with answer options and the correct answer at the end. Only follow 
     console.log("streaming...")
     return sendStream(event, stream);
 
+    // ======================================================
+    // POTENTIAL ALTERNATIVE PROMPT
+    // ======================================================
 
+    // Given the topic, quiz title, question, correct answer, and the difficulty level, create multiple-choice question options. The options have to be in line with the given subject matter and suitable for the stated difficulty level. Make sure to generate one correct answer (that matches the provided correct answer) and two or three plausible, but incorrect options that could potentially mislead someone who does not know the correct answer. For true/false questions, only generate two options. Do not use grammatical or spelling hints that may reveal the correct answer and avoid creating easily dismissable options. The generated options should be lettered and followed by the correct answer, indicated with 'ANSWER: [Letter]'. For example, if the question is "What color is the sky during a clear daytime?" and the correct answer is "Blue", your output could be something like:
 
-    // let answer = ""
-    // for await (const token of streamChatCompletion(messages)) {
-    //     console.log(token)
-    //     answer += token
-    // }
-
-    // const completion = await openai.createChatCompletion({
-    //     model: "gpt-3.5-turbo",
-    //     messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
-    // });
-
-    // console.log(completion.data.choices[0].message)
-    // const parsed = parseQuiz(completion.data.choices[0].message?.content ?? "")
-    // return {
-    //     quiz: parsed
-    // }
-    // const parsed = parseQuiz(answer)
-    // return {
-    //     quiz: parsed
-    // }
+    // A. Green
+    // B. Blue
+    // C. Red 
+    // D. Yellow
+    // ANSWER: B
 
 
 
