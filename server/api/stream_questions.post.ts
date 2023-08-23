@@ -1,20 +1,20 @@
 import { OpenAI } from "openai-streams/node";
 
-//TODO: still doesn't always use the correct question types, fit it.
+//TODO: still doesn't always use the correct question types, fix it.
 export default defineEventHandler(async (event) => {
     console.log("I'm in stream_questions.post.ts")
 
     //authorization
     const { openaiApiKey: OPENAI_API_KEY } = useRuntimeConfig()
     //prompts
-    const { topic, title, context, qNumber, qTypes: qTypesString } = await readBody(event)
+    const { topic, title, context, qNumber, qTypes: qTypesString, difficulty } = await readBody(event)
     console.log(`qTypes: ${qTypesString}`)
 
     const qTypes = qTypesString.split(",");
     const qTypeOptions = ["Multiple Choice", "Fill-in-the-blank", "True or False"];
     const qTypeExamples = {
         "Multiple Choice": [
-            "What is the capital of France?",
+            "Solve the system of equations:\n3x+5=2\nx+2=3",
             "How was Kennedy assassinated?",
             "The first person to go to space is which of the following?",
         ],
@@ -42,28 +42,21 @@ export default defineEventHandler(async (event) => {
         }
     }
 
-    // number them
-    selectedExamples.forEach((example, i) => {
-        selectedExamples[i] = `${i + 1}. ${example}`
-    })
-
-    //console.log(`selectedExamples: ${selectedExamples.join("\n")}`)
-
     const systemPrompt = `You are embedded in a quiz generator. Your job is to create helpful practice quiz questions given the information in the user message.
 
 Guidelines for creating effective questions:
 - Write a question stem that is concise, clear, and relevant to the learning outcome.
 - Avoid using irrelevant material, trick questions, negative wording, or double negatives in the question stem.
-- Use familiar language and terminology that is appropriate for the target audience.
+- Use familiar language and terminology that is appropriate for the target audience and difficulty level.
 
 You may ONLY respond with ${new Intl.ListFormat("en-US", { style: "short", type: "disjunction" }).format(qTypes)} questions.
 
 Label each question with a number like the below examples:
-${selectedExamples.join("\n")}
+${selectedExamples.map((example, i) => `${i + 1}. ${example}`).join("\n")}
 
-Don't inlude answer options. Only follow the syntax and question types listed above. Every question you generate must be solveable.`
+Don't include answer options. Only follow the syntax and question types listed above. Every question you generate must be solvable and conform to the difficulty level.`
     console.log(systemPrompt)
-    const userPrompt = `<{Topic}>${topic}<{/Topic}>\n\n<{Quiz Title}>${title}<{/Quiz Title}>\n\n<{Context}>${context}\n ${qNumber} questions<{/Context}>\nReminder: Don't talk to me! I just want questions of the given types.`
+    const userPrompt = `Topic: ${topic}\nQuiz Title: ${title}\nContext: \`${context}\`\nQuestions: ${qNumber}\nDifficulty: ${difficulty}\nReminder: NO ANSWER OPTIONS`
 
     const stream = await OpenAI(
         "chat",

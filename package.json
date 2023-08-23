@@ -8,7 +8,7 @@
     "preview": "nuxt preview"
   },
   "devDependencies": {
-    "@invictus.codes/nuxt-vuetify": "^0.2.20",
+    "@invictus.codes/nuxt-vuetify": "^0.2.23",
     "@nuxtjs/color-mode": "^3.2.0",
     "@nuxtjs/tailwindcss": "^6.6.5",
     "@types/node": "^18",

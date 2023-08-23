@@ -3,13 +3,12 @@
     <div class="card flex flex-col justify-center m-auto">
       <!-- question -->
       <div class="flex">
-        <span class="text-xl p-2 py-2 border-b-2 my-2 border-gray-500">{{
-          question?.text
-        }}</span>
+        <div class="text-xl p-2 py-2 border-b-2 my-2 border-gray-500">
+          <p v-for="line in question.text.split('\n')">{{ line }}</p>
+        </div>
 
         <!-- explain button -->
-        <!-- 4 = StreamStep.Done since enum... -->
-        <span v-if="question?.doneStreaming" class="btn mx-2 ml-auto flex mb-auto" @click="
+        <span v-if="question?.doneStreaming" class="btn m-2 ml-auto flex mb-auto" @click="
                     {
           explain();
           showExplanation = showExplanation ? false : true;
@@ -18,7 +17,7 @@
           <span class="material-symbols-outlined mr-1"> segment </span>
           <span>Explain</span>
         </span>
-        <span v-else class="btn mx-2 ml-auto flex hover:cursor-default border-none mb-auto">
+        <span v-else class="btn m-2 ml-auto flex hover:cursor-default border-none mb-auto">
           <span class="material-symbols-outlined mr-1"> segment </span>
           <span>Explain</span>
         </span>

@@ -24,6 +24,7 @@ interface QuizSettings {
     questionTypes: string[] // array of question types
     fast: boolean // use the fast mode
     oneTry: boolean // each question has one try
+    difficulty: string // difficulty level (elementary, middle, high, college)
 }
 
 interface Topic {

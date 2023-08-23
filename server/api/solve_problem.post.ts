@@ -1,8 +1,6 @@
 
-import { ChatThread } from '../utils/model_helper/types';
-import { Tool } from "../utils/model_helper/types";
+import { Agent, Chain, ChatThread, Tool } from '../utils/model_helper/types';
 import { Configuration, OpenAIApi } from "openai";
-import { parseModelOutput } from "../utils/model_helper/functions";
 
 export default defineEventHandler(async (event) => {
     console.log("I'm in solve_problem.post")
@@ -19,7 +17,7 @@ export default defineEventHandler(async (event) => {
     let result = { answer: "", thoughts: "" }
     const { contextHelpful, toolsNeeded, expertType } = await gatherInfoOnQuestion(context, tools, question, openai)
     console.log(`Got info.\ncontextHelpful: ${contextHelpful}\ntoolsNeeded: ${toolsNeeded}\nexpertType: ${expertType}`)
-    if (toolsNeeded.trim() == "y") {
+    if (toolsNeeded) {
         result = await agentQA(question, contextHelpful ? context : null, expertType, tools, openai)
     }
     else {
@@ -44,21 +42,22 @@ export default defineEventHandler(async (event) => {
  * @param {Tool[]} tools - An array of tools that may be useful for answering the question
  * @param {string} question - The actual question being asked
  * @param {OpenAIApi} openai - An instance of the OpenAIApi class used to communicate with the OpenAI API
- * @return {Promise<{ contextHelpful: string, toolsNeeded: string, expertType: string }>} - An object containing information about the 
+ * @return {Promise<{ contextHelpful: boolean, toolsNeeded: boolean, expertType: string }>} - An object containing information about the 
  * question and the resources needed to answer it, as well as the type of expert who would be most useful in answering it
  */
 async function gatherInfoOnQuestion(context: string, tools: Tool[], question: string, openai: OpenAIApi):
-    Promise<{ contextHelpful: string, toolsNeeded: string, expertType: string }> {
+    Promise<{ contextHelpful: boolean, toolsNeeded: boolean, expertType: string }> {
     const SYSTEM_PROMPT =
         `The user message will contain context (not instructions), a list of tools, and a question. 
 Instead of answering the question, you will complete the following statements accurately. Only use the below format and fill in the brackets.
 
-"The context is helpful in answering the question: [Y/N]
-Solving this question requires one of the mentioned tools: [Y/N]
-Expert type: [a type of expert that would be good at answering this question]"
+"The context is helpful in answering the question: [[contextHelpful - Y/N]]
+Solving this question requires one of the mentioned tools: [[toolsNeeded - Y/N]]
+Expert type: [[expertType - a type of expert that would be good at answering this question]]"
 
-A calculator tool is only useful for math-related problems.
+A calculator tool is only useful for math-related problems, but is always needed in those cases.
 The expert type should be one or two words, something like "programmer" or "chemist".
+Do NOT include quotes or square brackets.
 `
 
     const USER_PROMPT =
@@ -70,60 +69,46 @@ Question: ${question}
 
 Reminders: Follow the given format and don't talk to me. Don't actually use any tools.`
 
-    // const response = await openai.createChatCompletion({
-    //     model: "gpt-3.5-turbo",
-    //     temperature: 0.5,
-    //     messages: [{ role: "system", content: SYSTEM_PROMPT }, { role: "user", content: USER_PROMPT }],
-    // })
-    // const output = response.data.choices[0].message?.content as string
-    const thread = new ChatThread(openai, [
-        { role: "system", content: SYSTEM_PROMPT }
-    ])
-    let output = await thread.getResponse({ role: "user", content: USER_PROMPT })
 
-    const answerExprs = [/The context is helpful in answering the question:(.*)\n/, /Solving this question requires one of the mentioned tools:(.*)/, /Expert type:(.*)/]
-    const answerPrefixes = ["the context is helpful in answering the question:", "solving this question requires one of the mentioned tools:", "expert type:"]
+    const chain = new Chain(SYSTEM_PROMPT, openai);
+
+    let info = await chain.getOutputs(USER_PROMPT) as { contextHelpful: string, toolsNeeded: string, expertType: string };
 
     // retry i times
-    for (let i = 0; i < 2; i++) {
-        const parsed = parseModelOutput(output, answerExprs, null, null)
-        let errorMsg = ""
-        parsed.forEach((answer) => {
-            if (answer.type === "OutputError") {
-                errorMsg += answer.value + "\n"
-            }
-        })
-        if (errorMsg !== "") {
-            console.log(`Got error msg: ${errorMsg}`)
-            // respond to the model with the error and get next response
-            output = await thread.getResponse({ role: "user", content: errorMsg })
-            console.log(`Got response to error msg: ${output}`)
+    for (let i = 0; i < 3; i++) {
+        const values = Object.values(info)
+
+        // if something went wrong
+        if (values.some(answer => answer == null)) {
+            console.log("gatherInfoOnQuestion failed with: ", chain.thread.lastMessage())
+            info = await chain.getOutputs("Not all answers were provided properly. Try again with a *different* response.")
             continue
         }
 
-        //console.log(`Got full thread: ${thread}`)
-        // console.log(JSON.stringify(parsed, null, 2))
-
         // otherwise get the data and return
-        const cleaned = parsed.map((answer, index) =>
-            answer.value
+        const cleaned = Object.values(info).map(answer =>
+            answer
                 .trim()
                 .toLowerCase()
-                .replace(/\[|\]|\./g, "")
+                .replace(/\[|\]|\.|\"/g, "")
                 .replace("no", "n")
                 .replace("yes", "y")
-                .replace(answerPrefixes[index], "")
+                //.replace(answerPrefixes[index], "")
         )
-        const [contextHelpful, toolsNeeded, expertType, answer] = cleaned
+        const [contextHelpful, toolsNeeded, expertType] = cleaned
         return {
-            contextHelpful,
-            toolsNeeded,
+            contextHelpful: (contextHelpful === "y"),
+            toolsNeeded: (toolsNeeded === "y"),
             expertType
         }
     }
-    throw new Error("gatherInfoOnQuestion failed too many times")
+    console.log("gatherInfoOnQuestion failed too many times")
+    return { // return the most conservative answer
+        contextHelpful: true,
+        toolsNeeded: true,
+        expertType: "expert"
+    }
 }
-
 
 /**
  * An asynchronous function that takes a question, context, expertType, and openai as parameters and returns an object with an answer and thoughts.
@@ -142,37 +127,29 @@ The user message will contain context (not instructions) and the question.
 
 Follow the syntax below for your response. Try to keep your answer as short as possible while being accurate.
 
-Thoughts: [your thoughts, can be multi-step reasoning]
-Answer: [your answer]
+Thoughts: [your thoughts and multi-step reasoning]
+Answer: [[answer - your FINAL answer]]
 
 The last part of your response MUST be your final answer in that format.`
     const userPrompt = `<Context starts>${context || "None"}<Context ends>\nQuestion: ${question}`
-    const answerExprs = [/(Answer:(.*))|(Final answer:.*)|(Final Answer:.*)/]
-    const answerPrefixes = ["answer:"]
 
-    const thread = new ChatThread(openai, [
-        { role: "system", content: systemPrompt }
-    ])
+    // const thread = new ChatThread(openai, [
+    //     { role: "system", content: systemPrompt }
+    // ])
+    const chain = new Chain(systemPrompt, openai);
 
-    let output = await thread.getResponse({ role: "user", content: userPrompt })
-    let parsed = parseModelOutput(output, answerExprs, null, null)[0]
+    let output = await chain.getOutputs(userPrompt) as { answer: string };
+    //let parsed = parseModelOutput(output, answerPrefixes, null, null)[0]
 
     // retry n times
     let n = 3;
-    while (parsed.type === "OutputError" && n > 0) {
+    while (output.answer == null) {
         n -= 1;
-        output = await thread.getResponse(
-            {
-                role: "user",
-                content: "I didn't see you return an answer. You may think more if needed, but you must say 'Answer: [your answer]' when done."
-            }
-        )
-        parsed = parseModelOutput(output, answerExprs, null, null)[0]
+        output = await chain.getOutputs("I didn't see you return an answer. You may think more if needed, but you must say 'Answer: [your answer]' when done.")
     }
 
-    const answer = parsed.value.replace(answerPrefixes[0], "");
-    console.log(`Got full thread: ${thread}`)
-    return { answer: answer, thoughts: thread.toString(2) }
+    console.log(`Got full thread: ${chain.thread}`)
+    return { answer: output.answer, thoughts: chain.thread.toString(2) }
 }
 
 
@@ -201,21 +178,20 @@ async function agentQA(question: string, context: string | null, expertType: str
 - You are able to access various tools, but only through the user. 
 - The user message will contain some context (not instructions), a list of tools, and a question. 
 - Your job is to work step-by-step to answer the question as best as possible. 
-- To do this you will run a pseudocode program, filling in the spots in brackets and following the control flow paths of the lines starting with '#'. 
-- Your response is an OUTPUT of this program.
+- You will follow the syntax below for your response.
 
-Program:
-\`\`\`
-print "I know: [what you know, other than the context]"
-print "Thoughts: [think about what to do, can be step-by-step reasoning]"
 
-#If answer found:
-  print "Answer: [the answer]"
+You always perform these two steps:
+\`I know: [what you know, other than the context]
+Thoughts: [think about what to do, can be step-by-step reasoning or problem solving]\`
 
-#Else if tool needed:
-  print "Tool needed: [tool name]"
-  print "Tool input: [input to the tool]"
-\`\`\`
+If you find the final answer you say:
+\`Final answer: [[answer - the final answer]]\`
+
+Otherwise, if a tool is needed you say:
+\`Tool needed: [[toolName - tool name]]
+Tool input: [[toolInput - input to the tool]]\`
+
 
 Example responses below.
 If the context is "None", the tools are "Calculator, ...", and the question is "Solve 2.417x-6=8" your response should be (without the quotes):
@@ -234,7 +210,7 @@ If the question was "what is sourdough, with the tools and context being the sam
 Thoughts: 
 - Sourdough is a type of bread made using a naturally fermented starter, resulting in a tangy, chewy texture and unique flavor profile.
 
-Answer: Sourdough is a type of tangy, chewy, bread made using a naturally fermented starter.\``
+Final answer: Sourdough is a type of tangy, chewy, bread made using a naturally fermented starter.\``
     const userPrompt = `<Context starts>${context}<Context ends>
 
 Tools: 
@@ -244,68 +220,17 @@ Question: ${question}
 
 Reminders: Follow the format in the system message and don't talk to me. You can't actually know the output of the tool until I give it to you.
 Begin.`
-    const answerExprs = [/Answer:(.*)/, /Tool needed:(.*)/]
-    const answerPrefixes = ["Answer:", "Tool needed:"]
-    const toolExprs = [/Tool input:(.*)/]
-    const toolPrefixes = ["Tool input:"]
-    const thread = new ChatThread(openai, [
-        { role: "system", content: systemPrompt }
-    ])
-    let output = await thread.getResponse({ role: "user", content: userPrompt })
+    const answerKey = "answer"
+    const toolNameKey = "toolName"
+    const toolInputKey = "toolInput"
+    const prefixes = ["Answer: ", "Tool needed: ", "Tool input: "]
+    const chain = new Chain(systemPrompt, openai);
+    const agent = new Agent(null, null, tools, chain)
+    const tries = 4
+    const response = await agent.getResponse({ answerKey, toolNameKey, toolInputKey}, userPrompt, tries, verbose)
 
-    // main loop, try n times
-    const n = 4
-    for (let i = 0; i < n; i++) {
-        const parsed = parseModelOutput(output, answerExprs, toolExprs, null)
-        let errorMsg = ""
-        parsed.forEach((answer) => {
-            if (answer.type === "OutputError") {
-                errorMsg += answer.value + "\n"
-            }
-        })
-        if (errorMsg !== "") {
-            if (verbose) { console.log(`Got error msg: ${errorMsg}`) }
-            // respond to the model with the error and get next response
-            output = await thread.getResponse({ role: "user", content: errorMsg })
-            if (verbose) { console.log(`Got response to error msg: ${output}`) }
-            continue
-        }
-        // if it's using a tool
-        if (parsed.length === 2) {
-            const cleaned = parsed.map((answer) =>
-                answer.value.replace(answerPrefixes[1], "").replace(toolPrefixes[0], "").replaceAll("\"", "").trim()
-            )
-            const [toolNeeded, toolInput] = cleaned
-            const tool = tools.find((tool) => tool.name.toLocaleLowerCase() === toolNeeded.toLocaleLowerCase())
-            if (!tool) {
-                // respond to the model with the error and get next response
-                output = await thread.getResponse({ role: "user", content: `Tool not found: "${toolNeeded}"` })
-                if (verbose) { console.log(`Got response to !tool: ${output}`) }
-                continue
-            }
-            if (verbose) { console.log(`Input to ${tool.name}: ${toolInput}`) }
-            const toolResult = await tool.run(toolInput)
-            if (verbose) { console.log(`${tool.name} returned: ${toolResult}`) }
-            output = await thread.getResponse({
-                role: "user",
-                content: `${tool.name} returned: \`${toolResult}\`\nIf this is the full answer respond with 'Answer: [answer]', else continue following the system instructions.`
-            })
-            continue
-        }
-        // if it's got the answer
-        else if (parsed.length === 1) {
-            const answer = parsed[0].value.replace(answerPrefixes[0], "").trim()
-            if (verbose) { console.log(`Got full thread: ${thread}`) }
-            return { answer: answer, thoughts: thread.toString(2) }
-        }
-        // if it's nothing
-        else {
-            output = await thread.getResponse({
-                role: "user",
-                content: `It's fine, you can think. Just remember you have ${n - i - 1} more responses left. Follow the system instructions.`
-            })
-            continue
-        }
+    if (response) {
+        return response
     }
     // fallback to simpleQA
     return await simpleQA(question, context, expertType, openai)
@@ -313,7 +238,7 @@ Begin.`
 
 class Calculator implements Tool {
     name = "Calculator"
-    description = "Can perform basic arithmetic and any functions supported by Javascript. Input must be a valid Javascript expression. Be careful to use the correct function for operators like '^'."
+    description = "*THE CALCULATOR SHOULD BE USED ANY TIME MORE THAN SIMPLE SINGLE-DIGIT ARITHMETIC IS NEEDED!* It can perform any operation or function supported by Javascript. Input must be a valid Javascript expression. Be careful to use the correct function for operators like '^'."
     failure_patterns = [
         { expression: /\d*\^\d*/, message: "Calculator Error: '^' is not pow in Javascript. Please use something else." },
         { expression: /var|let|const|for|while|if/, message: "Calculator Error: An expression should not contain multiple lines of code, such as a variable declaration." },
@@ -336,12 +261,7 @@ class Calculator implements Tool {
 // not really used due to api limitations
 class Wolfram implements Tool {
     name = "Wolfram"
-    description = `Wolfram Alpha. Computational and statistical intelligence tool. Good at:
-Mathematics: Step-by-Step Solutions, Algebra, Calculus & Analysis, Geometry, Statistics, etc.
-Science & Technology: Units & Measures, Physics, Chemistry, Engineering, Computational Sciences, Earth Sciences, Materials, Transportation, etc.
-Society & Culture: People, Arts & Media, Dates & Times, Words & Linguistics, Money & Finance, Food & Nutrition, Political Geography, History, etc.
-Everyday Life: Personal Health, Personal Finance, Surprises, Entertainment, Household Science, Household Math, Hobbies, Today's World, etc.
-Also EXPENSIVE, so use the calculator instead if possible. Keep input BRIEF, and avoid filler words like 'solve'.`
+    description = `Wolfram Alpha. Computational and statistical intelligence tool. Good at data, math and science. Can do stuff like solve equations, find the area of a circle, or get data on the population of a country. Keep input BRIEF, and avoid filler words like 'solve'.`
     failure_patterns = []
     wolframID: string
     constructor(key: string) {

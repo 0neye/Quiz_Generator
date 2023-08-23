@@ -30,7 +30,7 @@ A. Bruges
 B. Washington D. C.
 C. Paris
 D. London
-CORRECT: C'
+ANSWER: C'
 
 '2. True or false: A pointer in programming is an integer that points to the location in memory of another variable.
 -{thinking}-
@@ -38,7 +38,7 @@ I know what a pointer is. This is true.
 -{end thinking}-
 A. True
 B. False
-CORRECT: A'
+ANSWER: A'
 
 '3. What is the value of X in this equation "2X+25=-3"?
 -{thinking}-
@@ -53,7 +53,7 @@ A. 25
 B. 15
 C. -15
 D. -14
-CORRECT: D'
+ANSWER: D'
 
 Do NOT include any syntax that is not present in the above examples.
 Do NOT preface the questions with "Question:", the parser already knows what a question is.

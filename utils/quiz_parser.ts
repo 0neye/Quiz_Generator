@@ -9,11 +9,13 @@ export function parseQuiz(input: string, seed: number = Math.random()): Question
     const lines = input.split("\n");
     let question: Question | null = null; // declare the variable here
     let inThoughts = false;
+    let inQuestionText = false;
 
     for (let line of lines) {
         line = line.trim();
         if (/^\d+\./.test(line)) {
             // new question
+            inQuestionText = true;
             question = {
                 text: line.replace(/^\d+\.\s*/, ""),
                 thoughts: "",
@@ -25,6 +27,7 @@ export function parseQuiz(input: string, seed: number = Math.random()): Question
         } else if (line.startsWith("-{thinking}-")) {
             // start of thoughts section
             inThoughts = true;
+            inQuestionText = false;
         } else if (line.startsWith("-{end thinking}-")) {
             // end of thoughts section
             inThoughts = false;
@@ -32,6 +35,7 @@ export function parseQuiz(input: string, seed: number = Math.random()): Question
             // part of thoughts section
             question!.thoughts += line + "\n";
         } else if (/^([a-z]|[A-Z])\./.test(line)) {
+            inQuestionText = false;
             // answer option
             const answer: Answer = {
                 letter: line[0].toUpperCase(),
@@ -47,6 +51,7 @@ export function parseQuiz(input: string, seed: number = Math.random()): Question
         }
         // to support a secondary format
         else if (/^ANSWER:/.test(line)) {
+            inQuestionText = false
             // get the correct letter
             const correctLetter = line.replace(/^ANSWER:\s*/, "").toUpperCase();
             // set the correct answer
@@ -55,6 +60,10 @@ export function parseQuiz(input: string, seed: number = Math.random()): Question
                     answer.correct = true;
                 }
             })
+        }
+        else if (inQuestionText && question && line !== 'A') {
+            // add the line to the question text
+            question!.text += "\n" + line;
         }
     }
 
