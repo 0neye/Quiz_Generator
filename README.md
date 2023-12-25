@@ -9,7 +9,7 @@ and force you to give context to generate a quiz from, which isn't always possib
 
 Currently the UI doesn't really work on mobile.
 
-## Deployment issues (unresolved)
+## Deployment issues (resolved)
 Attempt 1:
 
 Deploying on Vercel edge functions resulted in an error I couldn't find any help for online.
@@ -21,4 +21,4 @@ Attempt 2:
 
 I find Render which looks to have a similarly generous free tier to Vercel but can run basic node instances.
 Building succeeds, but when trying to run it I get another error related to Vuetify which no solutions found anywhere fix.
-This is currently where deployment stands. If I can't fix this bug I'll probably have to ditch Vuetify which would be a lot of work.
+Eventually, I find a solution by messing with version numbers and it magically works.
